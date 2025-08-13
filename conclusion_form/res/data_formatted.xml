@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data>
+  <person>
+    <organization>ООО &quot;РБЕ СЕВЕРО-ЗАПАД</organization>
+    <name>Глибичева Надежда Николаевна</name>
+    <birthday>11.04.1975</birthday>
+    <sex>Ж</sex>
+    <division>Столовая 34/74</division>
+    <profession>Помощник повара</profession>
+    <factors/>
+    <typework>п.23</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ООО &quot;РБЕ СЕВЕРО-ЗАПАД</organization>
+    <name>Фролова Елена Анатольевна</name>
+    <birthday>19.07.1973</birthday>
+    <sex>Ж</sex>
+    <division>Столовая 34/69</division>
+    <profession>Управляющий столовой</profession>
+    <factors/>
+    <typework>п.23</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ООО &quot;РБЕ СЕВЕРО-ЗАПАД</organization>
+    <name>Курстак Елена Николаевна</name>
+    <birthday>06.01.1971</birthday>
+    <sex>Ж</sex>
+    <division>Столовая 34/74</division>
+    <profession>Кладовщик</profession>
+    <factors/>
+    <typework>п.23</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ООО &quot;РБЕ СЕВЕРО-ЗАПАД</organization>
+    <name>Клименко Татьяна Николаевна</name>
+    <birthday>06.05.1955</birthday>
+    <sex>Ж</sex>
+    <division>Столовая 34/82</division>
+    <profession>Повар</profession>
+    <factors/>
+    <typework>п.23</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ООО &quot;РБЕ СЕВЕРО-ЗАПАД</organization>
+    <name>Щурко Юлия Николаевна</name>
+    <birthday>24.07.1976</birthday>
+    <sex>Ж</sex>
+    <division>Столовая 34/81</division>
+    <profession>Помощник повара</profession>
+    <factors/>
+    <typework>п.23</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Степанов Александр Валерьевич</name>
+    <birthday>25.11.1971</birthday>
+    <sex>М</sex>
+    <division>УАиМ</division>
+    <profession>Водитель автомобиля</profession>
+    <factors> п.5.1; п.8; п.18.1; п.18.2</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Проворов Михаил Юрьевич</name>
+    <birthday>22.12.1991</birthday>
+    <sex>М</sex>
+    <division>СМУ №2</division>
+    <profession>Мастер строительных и монтажных работ </profession>
+    <factors> п.5.1; п.6;</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Федорович Владимир Валерьевич</name>
+    <birthday>25.09.1988</birthday>
+    <sex>М</sex>
+    <division>УАиМ</division>
+    <profession>Машинист бульдозера</profession>
+    <factors>п.4.3.1;п.4.3.2; п.5.1;</factors>
+    <typework>п. 18.1</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Оняков Роман Викторович</name>
+    <birthday>30.08.2004</birthday>
+    <sex>М</sex>
+    <division/>
+    <profession>Подсобный рабочий</profession>
+    <factors>п.4.4; п.5.1; п.6; п.15 </factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Пелевин Дмитрий Анатольевич</name>
+    <birthday>04.06.1973</birthday>
+    <sex>М</sex>
+    <division>Участорк систем отопления, вентиляции, водопровода и канализации (ОВиВК)</division>
+    <profession>Монтажник систем вентиляции, кондиционирования воздуха, пневмотранспорта и аспирации</profession>
+    <factors>п.6; п.15 </factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Антонов Александр Иванович</name>
+    <birthday>05.12.1968</birthday>
+    <sex>М</sex>
+    <division>УАиМ</division>
+    <profession>Водитель автомобиля</profession>
+    <factors> п.5.1; п.8; п.18.1; п.18.2</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Чурсин Василий Валерьевич</name>
+    <birthday>04.01.1972</birthday>
+    <sex>М</sex>
+    <division>Участок автотранспорта и механизации</division>
+    <profession>Водитель автомобиля</profession>
+    <factors> п.5.1; п.8; п.18.1; п.18.2</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Быков Платон Дмитриевич</name>
+    <birthday>16.03.2006</birthday>
+    <sex>М</sex>
+    <division/>
+    <profession>Подсобный рабочий</profession>
+    <factors>п.4.4; п.5.1; п.6; п.15 </factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Коковин Александр Сергеевич</name>
+    <birthday>26.07.1987</birthday>
+    <sex>М</sex>
+    <division>Участок автотранспорта и механизации</division>
+    <profession>Водитель автомобиля</profession>
+    <factors> п.5.1; п.8; п.18.1; п.18.2</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Шелехов Александр Федорович</name>
+    <birthday>08.06.1986</birthday>
+    <sex>М</sex>
+    <division>УАиМ</division>
+    <profession>Водитель автомобиля</profession>
+    <factors> п.5.1; п.8; п.18.1; п.18.2</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Заусаева Ольга Валентиновна</name>
+    <birthday>14.06.1979</birthday>
+    <sex>Ж</sex>
+    <division>СМУ №2</division>
+    <profession>Подсобный рабочий</profession>
+    <factors>п.4.4; п.5.1; п.6; п.15 </factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Акберов Ильчин Эхтирамович</name>
+    <birthday>29.04.2001</birthday>
+    <sex>М</sex>
+    <division/>
+    <profession>Электросварщик ручной сварки</profession>
+    <factors>п.1.17; п.5.1; п.6; </factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Крылов Андрей Сергеевич</name>
+    <birthday>12.12.1985</birthday>
+    <sex>М</sex>
+    <division>УАиМ</division>
+    <profession>Водитель погрузчика</profession>
+    <factors>п.4.3.2; п.5.1; п.18.1</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Новожилов Василий Николаевич</name>
+    <birthday>16.11.1981</birthday>
+    <sex>М</sex>
+    <division>Строительно-монтажный участок №5</division>
+    <profession>Плотник</profession>
+    <factors>п.4.4; п.5.1; п.6; п.15 </factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Чигладзе Роман Эмзарович </name>
+    <birthday>05.11.1996</birthday>
+    <sex>М</sex>
+    <division/>
+    <profession>Водитель погрузчика</profession>
+    <factors>п.4.3.2; п.5.1; п.18.1</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ОП СУ &quot;Мирный&quot; ППК &quot;ВСК&quot;</organization>
+    <name>Романчич Александр Николаевич </name>
+    <birthday>05.03.1983</birthday>
+    <sex>М</sex>
+    <division>СМУ №9</division>
+    <profession>Плотник</profession>
+    <factors>п.4.4; п.5.1; п.6; п.15 </factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ПАО &quot;СОБР&quot;</organization>
+    <name>Емельянов Василий Валерьевич</name>
+    <birthday>26.11.1981</birthday>
+    <sex>М</sex>
+    <division>Автотранспортный участок</division>
+    <profession>Слесарь по ремонту автомобилей</profession>
+    <factors> п.4.4;</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>МБОУ &quot;Савинская средняя школа&quot; </organization>
+    <name>Малыгина Екатерина Викторовна</name>
+    <birthday>31.08.1984</birthday>
+    <sex>Ж</sex>
+    <division>МБОУ &quot;Савинская школа&quot;</division>
+    <profession>Учитель начальных классов</profession>
+    <factors/>
+    <typework>п.25</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ГБОУ АО &quot;Савинская специальная (коррекционная) общеобразовательная  школа-интернат&quot;</organization>
+    <name>Окрепилова Юлия Александровна</name>
+    <birthday>16.08.1976</birthday>
+    <sex>М</sex>
+    <division>Вспомогательный персонал</division>
+    <profession>Вахтер</profession>
+    <factors>п.5.1;</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ГБОУ АО &quot;Савинская специальная (коррекционная) общеобразовательная  школа-интернат&quot;</organization>
+    <name>Лопякова Ирина Валерьевна</name>
+    <birthday>30.05.1979</birthday>
+    <sex>Ж</sex>
+    <division>Основной персонал</division>
+    <profession>Учитель</profession>
+    <factors>п.5.2.2</factors>
+    <typework>п.25</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ГБОУ АО &quot;Савинская специальная (коррекционная) общеобразовательная  школа-интернат&quot;</organization>
+    <name>Сычев Роман Сергеевич</name>
+    <birthday>01.12.1997</birthday>
+    <sex>М</sex>
+    <division>Вспомогательный персонал</division>
+    <profession>Повар</profession>
+    <factors/>
+    <typework>п.23</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>МКУ ДО Мирнинская СШ</organization>
+    <name>Лобин Александр Александрович</name>
+    <birthday>06.02.1984</birthday>
+    <sex>М</sex>
+    <division>МКУ ДО Мирнинская СШ</division>
+    <profession>рабочий по комплексному обслуживанию и ремонту зданий</profession>
+    <factors/>
+    <typework>п.25</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>МУП &quot;ЖЭУ&quot;</organization>
+    <name>Величко Андрей Александрович</name>
+    <birthday>03.05.1988</birthday>
+    <sex>М</sex>
+    <division>Служба химводоподготовки &quot;ТХ&quot;</division>
+    <profession>аппаратчик ХВО-ОСХВО-2</profession>
+    <factors>п. 4.4</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>МУП &quot;ЖЭУ&quot;</organization>
+    <name>Ловыгин Александр Федорович</name>
+    <birthday>29.06.1963</birthday>
+    <sex>М</sex>
+    <division>Служба по ЭиРЭ</division>
+    <profession>Электромонтер по ремонту и обслуживанию электрооборудования</profession>
+    <factors> п.1.1;п.1.3;п.1.39;п.3.1.2;п.4.4;п.9;</factors>
+    <typework>п.26</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>МБОУ &quot;Северонежская школа&quot; </organization>
+    <name>Апоницина Ева Сергеевна</name>
+    <birthday>17.11.2007</birthday>
+    <sex>Ж</sex>
+    <division>Филиал ДОЛ &quot;Буревестник&quot;</division>
+    <profession>Горничная</profession>
+    <factors/>
+    <typework>п.25</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>МБОУ &quot;Северонежская школа&quot; </organization>
+    <name>Тикин Вадим Денисович</name>
+    <birthday>17.11.2004</birthday>
+    <sex>М</sex>
+    <division>Филиал ДОЛ &quot;Буревестник&quot;</division>
+    <profession>Вожатый</profession>
+    <factors/>
+    <typework>п.25</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ООО &quot;ПромТехно&quot;</organization>
+    <name>Долгий Александр Петрович</name>
+    <birthday>04.06.1971</birthday>
+    <sex>М</sex>
+    <division/>
+    <profession>Слесарь-ремонтник</profession>
+    <factors>п.1.2; п.3.1.1; п.3.1.7; п.4.2.3; п.4.3.1; п.4.4; п.4.7; п.4.8; п.4.9; п.6; п.12; п.13; п.15; п.17</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ООО &quot;РБЕ&quot;, ФИЛИАЛ СЕВЕРО-ЗАПАД&quot;</organization>
+    <name>Брундасова Светлана Николаевна</name>
+    <birthday>05.07.1966</birthday>
+    <sex>Ж</sex>
+    <division>Столовая 34/81</division>
+    <profession>Уборщик помещений</profession>
+    <factors/>
+    <typework>п.23</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ООО &quot;РБЕ&quot;, ФИЛИАЛ СЕВЕРО-ЗАПАД&quot;</organization>
+    <name>Попова Наталья Владимировна</name>
+    <birthday>23.03.1976</birthday>
+    <sex>Ж</sex>
+    <division>Столовая 34/69</division>
+    <profession>Мойщик посуды</profession>
+    <factors/>
+    <typework>п.23</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>ООО &quot;РБЕ&quot;, ФИЛИАЛ СЕВЕРО-ЗАПАД&quot;</organization>
+    <name>Давыдова Ольга Викторовна</name>
+    <birthday>16.07.1977</birthday>
+    <sex>Ж</sex>
+    <division>Столовая 34/85</division>
+    <profession>Кладовщик</profession>
+    <factors/>
+    <typework>п.23</typework>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>АО &quot;Арктическая теплогенерирующая компания&quot;</organization>
+    <name>Сухоруков Александр Викторович</name>
+    <birthday>25.12.2006</birthday>
+    <sex>М</sex>
+    <division>РУ №2</division>
+    <profession>Электрогазосварщик</profession>
+    <factors>п.5.1;п.4.2.1;п.3.1.7;п.1.39;п.1.1;</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+  <person>
+    <organization>АО &quot;Арктическая теплогенерирующая компания&quot;</organization>
+    <name>Пирогов Артем Михайлович</name>
+    <birthday>11.04.2007</birthday>
+    <sex>М</sex>
+    <division>МОК</division>
+    <profession>Слесарь по ремонту оборудования котельной</profession>
+    <factors>п.5.1;п.4.4;</factors>
+    <typework/>
+    <ids_date/>
+    <id>1754290424</id>
+    <date_created>04.08.2025 09:53:44</date_created>
+  </person>
+</data>
