@@ -8,10 +8,47 @@ import calendar
 import pandas as pd
 from conclusion_form.form import ConclusionForm
 from search_form.form import SearchForm
+import sys, os, json
+
+APP_NAME = "Medoctor"
+
+def appdata_dir():
+    base = os.environ.get("APPDATA", os.path.expanduser("~"))
+    path = os.path.join(base, APP_NAME)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+def settings_path():
+    return os.path.join(appdata_dir(), "settings.json")
+
+def resource_path(rel_path: str) -> str:
+    """
+    Возвращает путь к ресурсу и в dev-режиме, и внутри PyInstaller.
+    rel_path: относительный путь внутри проекта (например 'conclusion_form/res/template.docx')
+    """
+    if hasattr(sys, '_MEIPASS'):
+        base = sys._MEIPASS  # временная папка PyInstaller
+    else:
+        base = os.path.abspath(".")
+    return os.path.join(base, rel_path)
+
+SETTINGS_PATH = settings_path()
+XML_PATH      = resource_path("conclusion_form/res/data.xml")
+PRIKAZ_XLSX   = resource_path("search_form/input/prikaz29n.xlsx")\
+
+def user_prikaz_path():
+    return os.path.join(appdata_dir(), "prikaz29n.xlsx")
+
+def get_prikaz_read_path():
+    """
+    Путь, откуда читать приказ:
+    если в %APPDATA% есть пользовательская копия — берём её,
+    иначе — оригинал из пакета.
+    """
+    up = user_prikaz_path()
+    return up if os.path.exists(up) else PRIKAZ_XLSX
 
 
-SETTINGS_PATH = "conclusion_form/res/settings.json"
-XML_PATH = "conclusion_form/res/data.xml"
 
 def load_settings():
     if os.path.exists(SETTINGS_PATH):
@@ -231,7 +268,7 @@ class MainApp(tk.Tk):
                 messagebox.showerror("Ошибка", "Конечная дата меньше начальной")
                 return
 
-            map_path = 'search_form/input/prikaz29n.xlsx'
+            map_path = get_prikaz_read_path()
             if not os.path.exists(map_path):
                 messagebox.showerror("Ошибка", f"Не найден файл: {map_path}")
                 return
@@ -412,7 +449,7 @@ class MainApp(tk.Tk):
         top = tk.Toplevel(self)
         top.title("Настройки")
         top.resizable(False, False)
-        top.geometry("400x150")
+        top.geometry("400x350")
         tk.Label(top, text="Папка для сохранения документов:").pack(anchor="w", padx=10, pady=(10, 0))
         path_var = tk.StringVar(value=self.settings.get("save_dir", os.getcwd()))
         path_entry = tk.Entry(top, textvariable=path_var, width=50)
@@ -435,6 +472,37 @@ class MainApp(tk.Tk):
             top.destroy()
         tk.Button(top, text="Выбрать...", command=select_directory).pack(pady=5)
         tk.Button(top, text="Сохранить", command=save_and_close).pack(pady=(5, 10))
+
+        tk.Button(top, text="Редактировать приказ 29н…", command=self.open_prikaz_for_edit).pack(pady=(5, 0))
+
+    def open_prikaz_for_edit(self):
+        import shutil
+        dst = user_prikaz_path()
+        src = PRIKAZ_XLSX
+
+        try:
+            os.makedirs(appdata_dir(), exist_ok=True)
+            # если пользовательской копии нет — создаём из оригинала (или пустую, если оригинал исчез)
+            if not os.path.exists(dst):
+                if os.path.exists(src):
+                    shutil.copyfile(src, dst)
+                else:
+                    # создаём пустой xlsx с нужными колонками, чтобы не упасть при чтении
+                    import pandas as pd
+                    pd.DataFrame(columns=["n", "doctors_name", "inspection", "analysis"]).to_excel(dst, index=False)
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось подготовить файл приказа для редактирования:\n{e}")
+            return
+
+        # открываем пользовательскую копию в ассоциированном приложении (Excel)
+        try:
+            os.startfile(dst)
+            messagebox.showinfo(
+                "Редактирование приказа",
+                "Открыта копия приказа в %APPDATA%.\nВсе отчёты будут использовать именно её."
+            )
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось открыть файл:\n{e}")
 
     # ============ ОТЧЁТ ПО ОРГАНИЗАЦИИ ============
     def report_by_organization(self):

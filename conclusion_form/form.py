@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import messagebox, BooleanVar
 from tkinter.ttk import Combobox
 from tkcalendar import Calendar
-import os
 import datetime
 import xml.etree.ElementTree as ET
 from docx import Document
@@ -10,19 +9,47 @@ from docxcompose.composer import Composer
 import tempfile
 import shutil
 import re
-import json
-from tkinter import filedialog
 import xml.dom.minidom as minidom
 import ctypes
 from ctypes import wintypes
-import pandas as pd
 import calendar
-from openpyxl.styles import Alignment
-from openpyxl import load_workbook
 
-SETTINGS_PATH = "conclusion_form/res/settings.json"
-TEMPLATE_PATH = "conclusion_form/res/template.docx"
-XML_PATH = "conclusion_form/res/data.xml"
+import sys, os, json
+
+APP_NAME = "Medoctor"
+
+
+
+def appdata_dir():
+    base = os.environ.get("APPDATA", os.path.expanduser("~"))
+    path = os.path.join(base, APP_NAME)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+def settings_path():
+    return os.path.join(appdata_dir(), "settings.json")
+
+def resource_path(rel_path: str) -> str:
+    """
+    Возвращает путь к ресурсу и в dev-режиме, и внутри PyInstaller.
+    rel_path: относительный путь внутри проекта (например 'conclusion_form/res/template.docx')
+    """
+    if hasattr(sys, '_MEIPASS'):
+        base = sys._MEIPASS  # временная папка PyInstaller
+    else:
+        base = os.path.abspath(".")
+    return os.path.join(base, rel_path)
+
+SETTINGS_PATH = settings_path()  # теперь в %APPDATA%\Medoctor\settings.json
+TEMPLATE_PATH = resource_path("conclusion_form/res/template.docx")
+XML_PATH      = resource_path("conclusion_form/res/data.xml")
+USER_XML_PATH = os.path.join(appdata_dir(), "data.xml")
+if not os.path.exists(USER_XML_PATH):
+    import shutil
+    shutil.copy2(XML_PATH, USER_XML_PATH)
+CALENDAR_PNG  = resource_path("conclusion_form/res/calendar.png")
+PRIKAZ_XLSX   = resource_path("search_form/input/prikaz29n.xlsx")
+SUMMER_XLSX   = resource_path("search_form/input/summer.xlsx")
 
 class ConclusionForm(tk.Frame):
     def __init__(self, parent, main_app):
@@ -49,6 +76,8 @@ class ConclusionForm(tk.Frame):
 
         # --- UI ---
         self.build_ui()
+
+
 
     # --------- UI строим здесь -------------
     def build_ui(self):
@@ -80,7 +109,7 @@ class ConclusionForm(tk.Frame):
         self.birthday_entry = tk.Entry(self.birthday_frame, width=45)
         self.birthday_entry.pack(side="left", fill="x", expand=True)
         self.birthday_entry.bind("<KeyRelease>", self.format_date)
-        self.calendar_icon = tk.PhotoImage(master=self, file="conclusion_form/res/calendar.png")
+        self.calendar_icon = tk.PhotoImage(master=self, file=CALENDAR_PNG  )
         tk.Button(
             self.birthday_frame,
             image=self.calendar_icon,
@@ -262,9 +291,9 @@ class ConclusionForm(tk.Frame):
         self.ids_entry.delete(0, tk.END)
 
     def load_data(self):
-        if not os.path.exists(XML_PATH):
+        if not os.path.exists(USER_XML_PATH):
             return {}
-        tree = ET.parse(XML_PATH)
+        tree = ET.parse(USER_XML_PATH)
         root = tree.getroot()
         data = {}
         for person in root.findall("person"):
@@ -297,8 +326,8 @@ class ConclusionForm(tk.Frame):
                     name=None, birthday=None, sex_val=None, diagnosis=None, ids_date=None):
         if not (name and birthday and sex_val):
             return
-        if os.path.exists(XML_PATH):
-            tree = ET.parse(XML_PATH)
+        if os.path.exists(USER_XML_PATH):
+            tree = ET.parse(USER_XML_PATH)
             root = tree.getroot()
         else:
             root = ET.Element("data")
@@ -317,8 +346,8 @@ class ConclusionForm(tk.Frame):
         ET.SubElement(p, "ids_date").text = ids_date if ids_date else ""
         ET.SubElement(p, "id").text = str(int(datetime.datetime.now().timestamp()))
         ET.SubElement(p, "date_created").text = now_str
-        tree.write(XML_PATH, encoding="utf-8", xml_declaration=True)
-        self.prettify_xml(XML_PATH)
+        tree.write(USER_XML_PATH, encoding="utf-8", xml_declaration=True)
+        self.prettify_xml(USER_XML_PATH)
 
     def get_unique_values(self, field, org_name=None):
         """Вернёт уникальные значения поля. Если задана org_name — только для этой организации."""

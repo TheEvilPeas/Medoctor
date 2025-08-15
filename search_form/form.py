@@ -4,7 +4,67 @@ import pandas as pd
 from tkinter import messagebox
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
-import os
+import sys, os, json
+
+APP_NAME = "Medoctor"
+
+
+def appdata_dir():
+    base = os.environ.get("APPDATA", os.path.expanduser("~"))
+    path = os.path.join(base, APP_NAME)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+def settings_path():
+    return os.path.join(appdata_dir(), "settings.json")
+
+def resource_path(rel_path: str) -> str:
+    """
+    Возвращает путь к ресурсу и в dev-режиме, и внутри PyInstaller.
+    rel_path: относительный путь внутри проекта (например 'conclusion_form/res/template.docx')
+    """
+    if hasattr(sys, '_MEIPASS'):
+        base = sys._MEIPASS  # временная папка PyInstaller
+    else:
+        base = os.path.abspath(".")
+    return os.path.join(base, rel_path)
+
+SETTINGS_PATH = settings_path()  # теперь в %APPDATA%\Medoctor\settings.json
+TEMPLATE_PATH = resource_path("conclusion_form/res/template.docx")
+XML_PATH      = resource_path("conclusion_form/res/data.xml")
+USER_XML_PATH = os.path.join(appdata_dir(), "data.xml")
+if not os.path.exists(USER_XML_PATH):
+    import shutil
+    shutil.copy2(XML_PATH, USER_XML_PATH)
+CALENDAR_PNG  = resource_path("conclusion_form/res/calendar.png")
+PRIKAZ_XLSX   = resource_path("search_form/input/prikaz29n.xlsx")
+SUMMER_XLSX   = resource_path("search_form/input/summer.xlsx")
+
+def user_prikaz_path():
+    return os.path.join(appdata_dir(), "prikaz29n.xlsx")
+
+def get_prikaz_read_path():
+    """Если у пользователя уже есть копия в %APPDATA% — читаем её, иначе ресурсную."""
+    up = user_prikaz_path()
+    return up if os.path.exists(up) else PRIKAZ_XLSX
+
+def open_prikaz_for_edit():
+    """Гарантируем копию в %APPDATA% и открываем её на редактирование (Excel)."""
+    import shutil
+    dst = user_prikaz_path()
+    try:
+        os.makedirs(appdata_dir(), exist_ok=True)
+        if not os.path.exists(dst):
+            # если ресурсный файл упакован PyInstaller’ом — он доступен по PRIKAZ_XLSX
+            if os.path.exists(PRIKAZ_XLSX):
+                shutil.copyfile(PRIKAZ_XLSX, dst)
+            else:
+                # на всякий случай создадим пустой шаблон
+                pd.DataFrame(columns=["n", "doctors_name", "inspection", "analysis"]).to_excel(dst, index=False)
+        os.startfile(dst)
+    except Exception as e:
+        messagebox.showerror("Ошибка", f"Не удалось подготовить/открыть файл приказа:\n{e}")
+
 
 class SearchForm(tk.Frame):
     def __init__(self, parent, main_app=None):
@@ -16,7 +76,7 @@ class SearchForm(tk.Frame):
         self.age_over40_var = tk.BooleanVar()
         self.age_under40_var = tk.BooleanVar()
         # --- Загрузка данных ---
-        self.df = pd.read_excel('search_form/input/prikaz29n.xlsx')
+        self.df = pd.read_excel(get_prikaz_read_path())
         self.df['n'] = self.df['n'].astype(str).str.replace(',', '.')
         self.build_ui()
         self.last_save_path = None
@@ -303,7 +363,7 @@ class SearchForm(tk.Frame):
         self.render_to_tree(self.preview_main_tree, df_unique)
 
         # --- ДОБАВЛЯЕМ ЛИСТ Summer ---
-        summer_path = 'search_form/input/summer.xlsx'
+        summer_path = SUMMER_XLSX
         if os.path.exists(summer_path):
             try:
                 summer_workbook = load_workbook(summer_path)
