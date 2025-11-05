@@ -18,6 +18,16 @@ def appdata_dir():
     os.makedirs(path, exist_ok=True)
     return path
 
+def setup_logging():
+    log_dir = os.getcwd()
+    log_file = os.path.join(log_dir, "log.txt")
+
+    # Чтобы старые логи не затирались, можно дописывать
+    sys.stdout = open(log_file, "a", encoding="utf-8")
+    sys.stderr = sys.stdout
+
+    print("\n=== Запуск программы:", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "===\n")
+
 def settings_path():
     return os.path.join(appdata_dir(), "settings.json")
 
@@ -167,9 +177,12 @@ class MainApp(tk.Tk):
         self.current_form_frame = None
 
         self.create_menubar()
+        self.settings_window = None
         self.forms_area = tk.Frame(self)
         self.forms_area.pack(fill="both", expand=True)
-        self.show_form("conclusion")
+        self.show_form("search")
+
+
 
     def create_menubar(self):
         menubar = tk.Menu(self)
@@ -283,9 +296,9 @@ class MainApp(tk.Tk):
                 "Врач-невролог 7 каб",
                 "Врач-гинеколог 9 каб",
                 "Врач-оториноларинголог 6 каб",
-                "Врач-дерматовенеролог 8 каб",
+                "Врач-дерматовенеролог 9 каб",
                 "Врач-офтальмолог 4 каб",
-                "Врач-хирург 9 каб",
+                "Врач-хирург 8 каб",
                 "Врач-стоматолог",
                 "ФОГ",
                 "Мамография",
@@ -301,9 +314,9 @@ class MainApp(tk.Tk):
                 "Врач-невролог 7 каб": ["невролог"],
                 "Врач-гинеколог 9 каб": ["гинеколог"],
                 "Врач-оториноларинголог 6 каб": ["оториноларинголог", "лор"],
-                "Врач-дерматовенеролог 8 каб": ["дерматовенеролог", "дерматолог", "венеролог"],
+                "Врач-дерматовенеролог 9 каб": ["дерматовенеролог", "дерматолог", "венеролог"],
                 "Врач-офтальмолог 4 каб": ["офтальмолог"],
-                "Врач-хирург 9 каб": ["хирург"],
+                "Врач-хирург 8 каб": ["хирург"],
                 "Врач-стоматолог": ["стоматолог"],
             }
             test_patterns = {
@@ -446,19 +459,50 @@ class MainApp(tk.Tk):
             self.current_form_frame.pack(fill="both", expand=True)
 
     def open_settings(self):
+        # если окно уже существует — поднять и сфокусировать
+        if self.settings_window and self.settings_window.winfo_exists():
+            self.settings_window.deiconify()
+            self.settings_window.lift()
+            self.settings_window.focus_force()
+            # кратко сделать topmost, чтобы наверняка всплыло
+            self.settings_window.attributes('-topmost', True)
+            self.settings_window.after(100, lambda: self.settings_window.attributes('-topmost', False))
+            return
+
+        # иначе — создать новое и сохранить ссылку
         top = tk.Toplevel(self)
+        self.settings_window = top
         top.title("Настройки")
         top.resizable(False, False)
         top.geometry("400x350")
+
+        # при закрытии окна обнуляем ссылку
+        def on_close():
+            if self.settings_window and self.settings_window.winfo_exists():
+                self.settings_window.destroy()
+            self.settings_window = None
+
+        top.protocol("WM_DELETE_WINDOW", on_close)
+
         tk.Label(top, text="Папка для сохранения документов:").pack(anchor="w", padx=10, pady=(10, 0))
         path_var = tk.StringVar(value=self.settings.get("save_dir", os.getcwd()))
         path_entry = tk.Entry(top, textvariable=path_var, width=50)
         path_entry.pack(padx=10, pady=5)
+
         def select_directory():
             from tkinter import filedialog
-            path = filedialog.askdirectory()
+            # временно убираем topmost, чтобы диалог не оказался за окном
+            self.settings_window.attributes("-topmost", False)
+            path = filedialog.askdirectory(parent=self.settings_window)
+            # после выбора — вернуть окно наверх
+            self.settings_window.lift()
+            self.settings_window.focus_force()
+            self.settings_window.attributes("-topmost", True)
+            self.settings_window.after(100, lambda: self.settings_window.attributes("-topmost", False))
+
             if path:
                 path_var.set(path)
+
         def save_and_close():
             selected_path = path_var.get()
             if not os.path.exists(selected_path):
@@ -469,7 +513,8 @@ class MainApp(tk.Tk):
                     return
             self.settings["save_dir"] = selected_path
             save_settings(self.settings)
-            top.destroy()
+            on_close()
+
         tk.Button(top, text="Выбрать...", command=select_directory).pack(pady=5)
         tk.Button(top, text="Сохранить", command=save_and_close).pack(pady=(5, 10))
 
@@ -703,4 +748,5 @@ class MainApp(tk.Tk):
 
 if __name__ == "__main__":
     app = MainApp()
+    setup_logging()
     app.mainloop()

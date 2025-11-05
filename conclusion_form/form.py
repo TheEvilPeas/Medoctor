@@ -19,6 +19,15 @@ import sys, os, json
 APP_NAME = "Medoctor"
 
 
+def setup_logging():
+    log_dir = os.getcwd()
+    log_file = os.path.join(log_dir, "log.txt")
+
+    # Чтобы старые логи не затирались, можно дописывать
+    sys.stdout = open(log_file, "a", encoding="utf-8")
+    sys.stderr = sys.stdout
+
+    print("\n=== Запуск программы:", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "===\n")
 
 def appdata_dir():
     base = os.environ.get("APPDATA", os.path.expanduser("~"))
@@ -42,11 +51,7 @@ def resource_path(rel_path: str) -> str:
 
 SETTINGS_PATH = settings_path()  # теперь в %APPDATA%\Medoctor\settings.json
 TEMPLATE_PATH = resource_path("conclusion_form/res/template.docx")
-XML_PATH      = resource_path("conclusion_form/res/data.xml")
-USER_XML_PATH = os.path.join(appdata_dir(), "data.xml")
-if not os.path.exists(USER_XML_PATH):
-    import shutil
-    shutil.copy2(XML_PATH, USER_XML_PATH)
+USER_XML_PATH = resource_path("conclusion_form/res/data.xml")
 CALENDAR_PNG  = resource_path("conclusion_form/res/calendar.png")
 PRIKAZ_XLSX   = resource_path("search_form/input/prikaz29n.xlsx")
 SUMMER_XLSX   = resource_path("search_form/input/summer.xlsx")
@@ -85,6 +90,22 @@ class ConclusionForm(tk.Frame):
         self.columnconfigure(0, weight=1)
 
         row = 0
+        tk.Label(self, text="Дата ИДС").grid(row=row, column=0, sticky="w", padx=10, pady=(10, 0))
+        self.ids_frame = tk.Frame(self)
+        self.ids_frame.grid(row=row, column=1, sticky="w", padx=10)
+        self.ids_entry = tk.Entry(self.ids_frame, width=45)
+        self.ids_entry.pack(side="left", fill="x", expand=True)
+        self.ids_entry.bind("<KeyRelease>", self.format_date)
+        self.calendar_icon = tk.PhotoImage(master=self, file=CALENDAR_PNG  )
+        tk.Button(
+            self.ids_frame,
+            image=self.calendar_icon,
+            command=lambda: self.open_calendar(self.ids_entry),
+            bd=0,
+            relief="flat"
+        ).pack(side="left", padx=(5, 0))
+
+        row += 1
         tk.Label(self, text="Тип осмотра").grid(row=row, column=0, sticky="w", padx=10, pady=(10, 0))
         self.type_cb = Combobox(self, textvariable=self.type_var, values=["предварительный", "периодический"], width=50, state="readonly")
         self.type_cb.grid(row=row, column=1, padx=10, pady=(10, 0))
@@ -109,7 +130,6 @@ class ConclusionForm(tk.Frame):
         self.birthday_entry = tk.Entry(self.birthday_frame, width=45)
         self.birthday_entry.pack(side="left", fill="x", expand=True)
         self.birthday_entry.bind("<KeyRelease>", self.format_date)
-        self.calendar_icon = tk.PhotoImage(master=self, file=CALENDAR_PNG  )
         tk.Button(
             self.birthday_frame,
             image=self.calendar_icon,
@@ -149,26 +169,13 @@ class ConclusionForm(tk.Frame):
         self.diagnosis_cb.grid(row=row, column=1, padx=10)
         self.diagnosis_cb.bind('<KeyRelease>', self.on_keyrelease)
 
-        row += 1
-        tk.Label(self, text="Дата ИДС").grid(row=row, column=0, sticky="w", padx=10, pady=(10, 0))
-        self.ids_frame = tk.Frame(self)
-        self.ids_frame.grid(row=row, column=1, sticky="w", padx=10)
-        self.ids_entry = tk.Entry(self.ids_frame, width=45)
-        self.ids_entry.pack(side="left", fill="x", expand=True)
-        self.ids_entry.bind("<KeyRelease>", self.format_date)
-        tk.Button(
-            self.ids_frame,
-            image=self.calendar_icon,
-            command=lambda: self.open_calendar(self.ids_entry),
-            bd=0,
-            relief="flat"
-        ).pack(side="left", padx=(5, 0))
 
         row += 1
         self.create_btn = tk.Button(self, text="Создать документ", command=self.generate_document, bg="#4CAF50", fg="white", height=2)
         self.create_btn.grid(row=row, column=0, columnspan=2, padx=10, pady=20, sticky="ew")
 
         row += 1
+        self.combine_all = tk.BooleanVar(value=True)
         tk.Checkbutton(
             self,
             text="Объединить все в один файл",
@@ -194,6 +201,8 @@ class ConclusionForm(tk.Frame):
 
         for cb in (self.organization_cb, self.division_cb, self.profession_cb, self.factors_cb, self.typework_cb):
             cb.bind('<KeyRelease>', self.on_keyrelease)
+
+        setup_logging()
 
     # ---------------- Логика ---------------------
     @staticmethod
@@ -423,7 +432,8 @@ class ConclusionForm(tk.Frame):
             "{factors}": self.factors.get(),
             "{typework}": self.typework.get(),
             "{ids_date}": self.ids_entry.get(),
-            "{diagnosis}": self.diagnosis.get()
+            "{diagnosis}": self.diagnosis.get(),
+            "{year}": str(datetime.datetime.now().year)   # текущий год
         }
 
         if (not form_data["{organization}"] or
@@ -464,40 +474,28 @@ class ConclusionForm(tk.Frame):
                 self.settings.get("save_dir", os.getcwd()),
                 f"заключения_{datetime.datetime.now().strftime('%d.%m.%Y')}.docx"
             )
+
             if os.path.exists(combined_filename):
-                base_copy = combined_filename + ".tmp"
                 try:
-                    shutil.copyfile(combined_filename, base_copy)
-                except PermissionError:
-                    messagebox.showerror(
-                        "Ошибка записи",
-                        "Невозможно создать запись, проверьте, закрыт ли Word-файл."
-                    )
+                    master_doc = Document(combined_filename)
+                    composer = Composer(master_doc)
+                    composer.append(Document(temp_doc_path))
+                    composer.save(combined_filename)
+                    self.show_notification(f"Добавлено в файл: {combined_filename}")
+                except Exception as e:
+                    messagebox.showerror("Ошибка", f"Не удалось дописать в файл:\n{e}")
                     return
-                master_doc = Document(base_copy)
             else:
-                master_doc = Document(temp_doc_path)
+                # создаём новый файл из temp_doc
                 try:
-                    master_doc.save(combined_filename)
-                except PermissionError:
-                    messagebox.showerror(
-                        "Ошибка записи",
-                        "Невозможно создать запись, проверьте, закрыт ли Word-файл."
-                    )
+                    shutil.copyfile(temp_doc_path, combined_filename)
+                    self.show_notification(f"Создан новый файл: {combined_filename}")
+                    print("создан новый файл для дозаписи")
+                except Exception as e:
+                    messagebox.showerror("Ошибка", f"Не удалось создать файл:\n{e}")
+                    print("файл не создан")
                     return
 
-            composer = Composer(master_doc)
-            if os.path.exists(combined_filename):
-                composer.append(Document(temp_doc_path))
-            try:
-                composer.save(combined_filename)
-                self.show_notification(f"Добавлено в файл: {combined_filename}")
-            except PermissionError:
-                messagebox.showerror(
-                    "Ошибка записи",
-                    "Невозможно создать запись, проверьте, закрыт ли Word-файл."
-                )
-                return
         else:
             filename = os.path.join(
                 self.settings.get("save_dir", os.getcwd()),
@@ -643,209 +641,209 @@ class ConclusionForm(tk.Frame):
         )
         self.after(duration, self.notification_label.place_forget)
 
-    # ----------------- ОТЧЁТЫ --------------------
-    def report_by_organization(self):
-        # -- Твой старый код "report_by_organization", только self везде --
-        import pandas as pd
-        if self.report_org_window and self.report_org_window.winfo_exists():
-            self.report_org_window.focus_force()
-            return
-        self.report_org_window = tk.Toplevel(self)
-        rpt = self.report_org_window
-        rpt.title("Отчет по организации")
-        rpt.resizable(False, False)
-        rpt.protocol("WM_DELETE_WINDOW", lambda: (rpt.destroy(), self.set_report_none()))
-        padx, pady = 10, 5
-        org_var_report = tk.StringVar()
-        tk.Label(rpt, text="Организация:").grid(row=0, column=0, sticky="w", padx=padx, pady=pady)
-        org_list = sorted(self.data.keys())
-        org_cb = Combobox(
-            rpt,
-            values=org_list,
-            textvariable=org_var_report,
-            width=40,
-            state="readonly"
-        )
-        org_cb.grid(row=0, column=1, padx=padx, pady=pady)
-        org_var_report.set("")
-        tk.Label(rpt, text="Период с:").grid(row=1, column=0, sticky="w", padx=padx, pady=pady)
-        start_var = tk.StringVar()
-        start_entry = tk.Entry(rpt, width=20, textvariable=start_var)
-        start_entry.grid(row=1, column=1, sticky="w", padx=padx, pady=pady)
-        tk.Button(rpt, text="📅", command=lambda: self.open_calendar(start_entry)).grid(row=1, column=2, padx=0, pady=pady)
-        tk.Label(rpt, text="По:").grid(row=2, column=0, sticky="w", padx=padx, pady=pady)
-        end_var = tk.StringVar()
-        end_entry = tk.Entry(rpt, width=20, textvariable=end_var)
-        end_entry.grid(row=2, column=1, sticky="w", padx=padx, pady=pady)
-        tk.Button(rpt, text="📅", command=lambda: self.open_calendar(end_entry)).grid(row=2, column=2, padx=0, pady=pady)
-
-        def on_start_changed(*_):
-            s = start_var.get().strip()
-            if self.is_valid_date(s):
-                dt = datetime.datetime.strptime(s, "%d.%m.%Y")
-                last = calendar.monthrange(dt.year, dt.month)[1]
-                end_var.set(f"{last:02d}.{dt.month:02d}.{dt.year}")
-
-        start_var.trace_add("write", on_start_changed)
-
-        def make_report():
-            org_sel = org_var_report.get().strip()
-            start = start_entry.get().strip()
-            end = end_entry.get().strip()
-            if not org_sel:
-                messagebox.showerror("Ошибка ввода", "Выберите организацию")
-                return
-            if not self.is_valid_date(start) or not self.is_valid_date(end):
-                messagebox.showerror("Ошибка даты", "Даты в формате ДД.ММ.ГГГГ")
-                return
-            d0 = datetime.datetime.strptime(start, "%d.%m.%Y")
-            d1 = datetime.datetime.strptime(end, "%d.%m.%Y")
-            if d1 < d0:
-                messagebox.showerror("Ошибка", "Конечная дата меньше начальной")
-                return
-            rows = []
-            for r in self.data.get(org_sel, []):
-                ids = r.get("ids_date", "").strip()
-                if not ids:
-                    continue
-                try:
-                    d_ids = datetime.datetime.strptime(ids, "%d.%m.%Y")
-                except ValueError:
-                    continue
-                if d0 <= d_ids <= d1:
-                    rows.append({
-                        "Организация": org_sel,
-                        "ФИО": r["name"],
-                        "Дата рожд.": r["birthday"],
-                        "Пол": r["sex"],
-                        "Подразделение": r["division"],
-                        "Должность": r["profession"],
-                        "Факторы": r["factors"],
-                        "Виды работ": r["typework"],
-                        "Дата ИДС": ids,
-                        "Диагноз": r.get("diagnosis", "")
-                    })
-            if not rows:
-                messagebox.showinfo("Пустой отчет", "Нет записей за выбранный период.")
-                return
-            df = pd.DataFrame(rows)
-            save_dir = self.settings.get("save_dir", os.getcwd())
-            fname = self.sanitize_filename(f"Отчет_{org_sel}_{start}_{end}.xlsx")
-            save_path = os.path.join(save_dir, fname)
-            try:
-                from openpyxl.utils import get_column_letter
-                with pd.ExcelWriter(save_path, engine="openpyxl") as writer:
-                    df.to_excel(writer, index=False, sheet_name="Report")
-                    sheet = writer.sheets["Report"]
-                    for idx, col in enumerate(df.columns, start=1):
-                        width = max(df[col].astype(str).map(len).max(), len(col)) + 2
-                        sheet.column_dimensions[get_column_letter(idx)].width = width
-                self.show_notification(f"Отчет сохранён: {save_path}")
-            except Exception as e:
-                messagebox.showerror("Ошибка записи", f"Не удалось сохранить файл:\n{e}")
-
-        tk.Button(
-            rpt,
-            text="Сформировать",
-            command=make_report,
-            bg="#4CAF50",
-            fg="white"
-        ).grid(row=3, column=0, columnspan=3, pady=(10, 10), padx=padx, sticky="ew")
-        rpt.grid_columnconfigure(1, weight=1)
-        rpt.update_idletasks()
-        w, h = rpt.winfo_width(), rpt.winfo_height()
-        sw, sh = rpt.winfo_screenwidth(), rpt.winfo_screenheight()
-        x, y = (sw - w) // 2, (sh - h) // 2
-        rpt.geometry(f"{w}x{h}+{x}+{y}")
-
-    def set_report_none(self):
-        self.report_org_window = None
-        self.report_month_window = None
-
-    def report_by_month(self):
-        import pandas as pd
-        if self.report_month_window and self.report_month_window.winfo_exists():
-            self.report_month_window.focus_force()
-            return
-        self.report_month_window = tk.Toplevel(self)
-        rpt = self.report_month_window
-        rpt.title("Отчет по дате ИДС")
-        rpt.resizable(False, False)
-        rpt.protocol("WM_DELETE_WINDOW", lambda: (rpt.destroy(), self.set_report_none()))
-        padx, pady = 10, 5
-        tk.Label(rpt, text="Период с:").grid(row=0, column=0, sticky="w", padx=padx, pady=pady)
-        start_var = tk.StringVar()
-        start_entry = tk.Entry(rpt, width=20, textvariable=start_var)
-        start_entry.grid(row=0, column=1, sticky="w", padx=padx, pady=pady)
-        tk.Button(rpt, text="📅", command=lambda: self.open_calendar(start_entry)).grid(row=0, column=2, padx=0, pady=pady)
-        tk.Label(rpt, text="По:").grid(row=1, column=0, sticky="w", padx=padx, pady=pady)
-        end_var = tk.StringVar()
-        end_entry = tk.Entry(rpt, width=20, textvariable=end_var)
-        end_entry.grid(row=1, column=1, sticky="w", padx=padx, pady=pady)
-        tk.Button(rpt, text="📅", command=lambda: self.open_calendar(end_entry)).grid(row=1, column=2, padx=0, pady=pady)
-        def on_start_changed(*_):
-            s = start_var.get().strip()
-            if self.is_valid_date(s):
-                dt = datetime.datetime.strptime(s, "%d.%m.%Y")
-                last = calendar.monthrange(dt.year, dt.month)[1]
-                end_var.set(f"{last:02d}.{dt.month:02d}.{dt.year}")
-        start_var.trace_add("write", on_start_changed)
-        def make_report_month():
-            start = start_var.get().strip()
-            end = end_var.get().strip()
-            d0 = datetime.datetime.strptime(start, "%d.%m.%Y")
-            d1 = datetime.datetime.strptime(end, "%d.%m.%Y")
-            rows = []
-            for org_name, recs in self.data.items():
-                for r in recs:
-                    ids = r.get("ids_date", "").strip()
-                    if not ids:
-                        continue
-                    try:
-                        d_ids = datetime.datetime.strptime(ids, "%d.%m.%Y")
-                    except ValueError:
-                        continue
-                    if d0 <= d_ids <= d1:
-                        rows.append({
-                            "Организация": org_name,
-                            "ФИО": r["name"],
-                            "Дата рожд.": r["birthday"],
-                            "Пол": r["sex"],
-                            "Подразделение": r["division"],
-                            "Должность": r["profession"],
-                            "Факторы": r["factors"],
-                            "Виды работ": r["typework"],
-                            "Дата ИДС": ids,
-                            "Диагноз": r.get("diagnosis", "")
-                        })
-            if not rows:
-                messagebox.showinfo("Пустой отчет", "Нет записей за выбранный период.")
-                return
-            df = pd.DataFrame(rows)
-            save_dir = self.settings.get("save_dir", os.getcwd())
-            fname = self.sanitize_filename(f"Отчет_по_месяцу_{start}_{end}.xlsx")
-            save_path = os.path.join(save_dir, fname)
-            try:
-                from openpyxl.utils import get_column_letter
-                with pd.ExcelWriter(save_path, engine="openpyxl") as writer:
-                    df.to_excel(writer, index=False, sheet_name="Report")
-                    sheet = writer.sheets["Report"]
-                    for idx, col in enumerate(df.columns, start=1):
-                        width = max(df[col].astype(str).map(len).max(), len(col)) + 2
-                        sheet.column_dimensions[get_column_letter(idx)].width = width
-                self.show_notification(f"Отчет сохранён: {save_path}")
-            except Exception as e:
-                messagebox.showerror("Ошибка записи", f"Не удалось сохранить файл:\n{e}")
-        tk.Button(
-            rpt,
-            text="Сформировать",
-            command=make_report_month,
-            bg="#4CAF50",
-            fg="white"
-        ).grid(row=2, column=0, columnspan=3, pady=(10, 10), padx=padx, sticky="ew")
-        rpt.grid_columnconfigure(1, weight=1)
-        rpt.update_idletasks()
-        w, h = rpt.winfo_width(), rpt.winfo_height()
-        sw, sh = rpt.winfo_screenwidth(), rpt.winfo_screenheight()
-        x, y = (sw - w) // 2, (sh - h) // 2
-        rpt.geometry(f"{w}x{h}+{x}+{y}")
+    # # ----------------- ОТЧЁТЫ --------------------
+    # def report_by_organization(self):
+    #     # -- Твой старый код "report_by_organization", только self везде --
+    #     import pandas as pd
+    #     if self.report_org_window and self.report_org_window.winfo_exists():
+    #         self.report_org_window.focus_force()
+    #         return
+    #     self.report_org_window = tk.Toplevel(self)
+    #     rpt = self.report_org_window
+    #     rpt.title("Отчет по организации")
+    #     rpt.resizable(False, False)
+    #     rpt.protocol("WM_DELETE_WINDOW", lambda: (rpt.destroy(), self.set_report_none()))
+    #     padx, pady = 10, 5
+    #     org_var_report = tk.StringVar()
+    #     tk.Label(rpt, text="Организация:").grid(row=0, column=0, sticky="w", padx=padx, pady=pady)
+    #     org_list = sorted(self.data.keys())
+    #     org_cb = Combobox(
+    #         rpt,
+    #         values=org_list,
+    #         textvariable=org_var_report,
+    #         width=40,
+    #         state="readonly"
+    #     )
+    #     org_cb.grid(row=0, column=1, padx=padx, pady=pady)
+    #     org_var_report.set("")
+    #     tk.Label(rpt, text="Период с:").grid(row=1, column=0, sticky="w", padx=padx, pady=pady)
+    #     start_var = tk.StringVar()
+    #     start_entry = tk.Entry(rpt, width=20, textvariable=start_var)
+    #     start_entry.grid(row=1, column=1, sticky="w", padx=padx, pady=pady)
+    #     tk.Button(rpt, text="📅", command=lambda: self.open_calendar(start_entry)).grid(row=1, column=2, padx=0, pady=pady)
+    #     tk.Label(rpt, text="По:").grid(row=2, column=0, sticky="w", padx=padx, pady=pady)
+    #     end_var = tk.StringVar()
+    #     end_entry = tk.Entry(rpt, width=20, textvariable=end_var)
+    #     end_entry.grid(row=2, column=1, sticky="w", padx=padx, pady=pady)
+    #     tk.Button(rpt, text="📅", command=lambda: self.open_calendar(end_entry)).grid(row=2, column=2, padx=0, pady=pady)
+    #
+    #     def on_start_changed(*_):
+    #         s = start_var.get().strip()
+    #         if self.is_valid_date(s):
+    #             dt = datetime.datetime.strptime(s, "%d.%m.%Y")
+    #             last = calendar.monthrange(dt.year, dt.month)[1]
+    #             end_var.set(f"{last:02d}.{dt.month:02d}.{dt.year}")
+    #
+    #     start_var.trace_add("write", on_start_changed)
+    #
+    #     def make_report():
+    #         org_sel = org_var_report.get().strip()
+    #         start = start_entry.get().strip()
+    #         end = end_entry.get().strip()
+    #         if not org_sel:
+    #             messagebox.showerror("Ошибка ввода", "Выберите организацию")
+    #             return
+    #         if not self.is_valid_date(start) or not self.is_valid_date(end):
+    #             messagebox.showerror("Ошибка даты", "Даты в формате ДД.ММ.ГГГГ")
+    #             return
+    #         d0 = datetime.datetime.strptime(start, "%d.%m.%Y")
+    #         d1 = datetime.datetime.strptime(end, "%d.%m.%Y")
+    #         if d1 < d0:
+    #             messagebox.showerror("Ошибка", "Конечная дата меньше начальной")
+    #             return
+    #         rows = []
+    #         for r in self.data.get(org_sel, []):
+    #             ids = r.get("ids_date", "").strip()
+    #             if not ids:
+    #                 continue
+    #             try:
+    #                 d_ids = datetime.datetime.strptime(ids, "%d.%m.%Y")
+    #             except ValueError:
+    #                 continue
+    #             if d0 <= d_ids <= d1:
+    #                 rows.append({
+    #                     "Организация": org_sel,
+    #                     "ФИО": r["name"],
+    #                     "Дата рожд.": r["birthday"],
+    #                     "Пол": r["sex"],
+    #                     "Подразделение": r["division"],
+    #                     "Должность": r["profession"],
+    #                     "Факторы": r["factors"],
+    #                     "Виды работ": r["typework"],
+    #                     "Дата ИДС": ids,
+    #                     "Диагноз": r.get("diagnosis", "")
+    #                 })
+    #         if not rows:
+    #             messagebox.showinfo("Пустой отчет", "Нет записей за выбранный период.")
+    #             return
+    #         df = pd.DataFrame(rows)
+    #         save_dir = self.settings.get("save_dir", os.getcwd())
+    #         fname = self.sanitize_filename(f"Отчет_{org_sel}_{start}_{end}.xlsx")
+    #         save_path = os.path.join(save_dir, fname)
+    #         try:
+    #             from openpyxl.utils import get_column_letter
+    #             with pd.ExcelWriter(save_path, engine="openpyxl") as writer:
+    #                 df.to_excel(writer, index=False, sheet_name="Report")
+    #                 sheet = writer.sheets["Report"]
+    #                 for idx, col in enumerate(df.columns, start=1):
+    #                     width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+    #                     sheet.column_dimensions[get_column_letter(idx)].width = width
+    #             self.show_notification(f"Отчет сохранён: {save_path}")
+    #         except Exception as e:
+    #             messagebox.showerror("Ошибка записи", f"Не удалось сохранить файл:\n{e}")
+    #
+    #     tk.Button(
+    #         rpt,
+    #         text="Сформировать",
+    #         command=make_report,
+    #         bg="#4CAF50",
+    #         fg="white"
+    #     ).grid(row=3, column=0, columnspan=3, pady=(10, 10), padx=padx, sticky="ew")
+    #     rpt.grid_columnconfigure(1, weight=1)
+    #     rpt.update_idletasks()
+    #     w, h = rpt.winfo_width(), rpt.winfo_height()
+    #     sw, sh = rpt.winfo_screenwidth(), rpt.winfo_screenheight()
+    #     x, y = (sw - w) // 2, (sh - h) // 2
+    #     rpt.geometry(f"{w}x{h}+{x}+{y}")
+    #
+    # def set_report_none(self):
+    #     self.report_org_window = None
+    #     self.report_month_window = None
+    #
+    # def report_by_month(self):
+    #     import pandas as pd
+    #     if self.report_month_window and self.report_month_window.winfo_exists():
+    #         self.report_month_window.focus_force()
+    #         return
+    #     self.report_month_window = tk.Toplevel(self)
+    #     rpt = self.report_month_window
+    #     rpt.title("Отчет по дате ИДС")
+    #     rpt.resizable(False, False)
+    #     rpt.protocol("WM_DELETE_WINDOW", lambda: (rpt.destroy(), self.set_report_none()))
+    #     padx, pady = 10, 5
+    #     tk.Label(rpt, text="Период с:").grid(row=0, column=0, sticky="w", padx=padx, pady=pady)
+    #     start_var = tk.StringVar()
+    #     start_entry = tk.Entry(rpt, width=20, textvariable=start_var)
+    #     start_entry.grid(row=0, column=1, sticky="w", padx=padx, pady=pady)
+    #     tk.Button(rpt, text="📅", command=lambda: self.open_calendar(start_entry)).grid(row=0, column=2, padx=0, pady=pady)
+    #     tk.Label(rpt, text="По:").grid(row=1, column=0, sticky="w", padx=padx, pady=pady)
+    #     end_var = tk.StringVar()
+    #     end_entry = tk.Entry(rpt, width=20, textvariable=end_var)
+    #     end_entry.grid(row=1, column=1, sticky="w", padx=padx, pady=pady)
+    #     tk.Button(rpt, text="📅", command=lambda: self.open_calendar(end_entry)).grid(row=1, column=2, padx=0, pady=pady)
+    #     def on_start_changed(*_):
+    #         s = start_var.get().strip()
+    #         if self.is_valid_date(s):
+    #             dt = datetime.datetime.strptime(s, "%d.%m.%Y")
+    #             last = calendar.monthrange(dt.year, dt.month)[1]
+    #             end_var.set(f"{last:02d}.{dt.month:02d}.{dt.year}")
+    #     start_var.trace_add("write", on_start_changed)
+    #     def make_report_month():
+    #         start = start_var.get().strip()
+    #         end = end_var.get().strip()
+    #         d0 = datetime.datetime.strptime(start, "%d.%m.%Y")
+    #         d1 = datetime.datetime.strptime(end, "%d.%m.%Y")
+    #         rows = []
+    #         for org_name, recs in self.data.items():
+    #             for r in recs:
+    #                 ids = r.get("ids_date", "").strip()
+    #                 if not ids:
+    #                     continue
+    #                 try:
+    #                     d_ids = datetime.datetime.strptime(ids, "%d.%m.%Y")
+    #                 except ValueError:
+    #                     continue
+    #                 if d0 <= d_ids <= d1:
+    #                     rows.append({
+    #                         "Организация": org_name,
+    #                         "ФИО": r["name"],
+    #                         "Дата рожд.": r["birthday"],
+    #                         "Пол": r["sex"],
+    #                         "Подразделение": r["division"],
+    #                         "Должность": r["profession"],
+    #                         "Факторы": r["factors"],
+    #                         "Виды работ": r["typework"],
+    #                         "Дата ИДС": ids,
+    #                         "Диагноз": r.get("diagnosis", "")
+    #                     })
+    #         if not rows:
+    #             messagebox.showinfo("Пустой отчет", "Нет записей за выбранный период.")
+    #             return
+    #         df = pd.DataFrame(rows)
+    #         save_dir = self.settings.get("save_dir", os.getcwd())
+    #         fname = self.sanitize_filename(f"Отчет_по_месяцу_{start}_{end}.xlsx")
+    #         save_path = os.path.join(save_dir, fname)
+    #         try:
+    #             from openpyxl.utils import get_column_letter
+    #             with pd.ExcelWriter(save_path, engine="openpyxl") as writer:
+    #                 df.to_excel(writer, index=False, sheet_name="Report")
+    #                 sheet = writer.sheets["Report"]
+    #                 for idx, col in enumerate(df.columns, start=1):
+    #                     width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+    #                     sheet.column_dimensions[get_column_letter(idx)].width = width
+    #             self.show_notification(f"Отчет сохранён: {save_path}")
+    #         except Exception as e:
+    #             messagebox.showerror("Ошибка записи", f"Не удалось сохранить файл:\n{e}")
+    #     tk.Button(
+    #         rpt,
+    #         text="Сформировать",
+    #         command=make_report_month,
+    #         bg="#4CAF50",
+    #         fg="white"
+    #     ).grid(row=2, column=0, columnspan=3, pady=(10, 10), padx=padx, sticky="ew")
+    #     rpt.grid_columnconfigure(1, weight=1)
+    #     rpt.update_idletasks()
+    #     w, h = rpt.winfo_width(), rpt.winfo_height()
+    #     sw, sh = rpt.winfo_screenwidth(), rpt.winfo_screenheight()
+    #     x, y = (sw - w) // 2, (sh - h) // 2
+    #     rpt.geometry(f"{w}x{h}+{x}+{y}")

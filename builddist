@@ -1,0 +1,1 @@
+ pyinstaller --noconfirm --clean --noconsole --name Medoctor --icon=res/favicon.ico --add-data "conclusion_form/res;conclusion_form/res"  --add-data "search_form/input;search_form/input" main.py
