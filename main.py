@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import ttk
 from tkinter.ttk import Combobox
 import os
 import json
@@ -173,6 +174,7 @@ class MainApp(tk.Tk):
         super().__init__()
         self.title("Генератор медицинских заключений")
         self.geometry("680x550")
+        self.apply_light_theme()
         self.settings = load_settings()
         self.current_form_frame = None
 
@@ -183,6 +185,28 @@ class MainApp(tk.Tk):
         self.show_form("search")
 
 
+
+
+    def apply_light_theme(self):
+        self.configure(bg="white")
+        self.tk_setPalette(
+            background="white",
+            foreground="black",
+            activeBackground="#e9e9e9",
+            activeForeground="black"
+        )
+
+        style = ttk.Style(self)
+        try:
+            style.theme_use("clam")
+        except Exception:
+            pass
+
+        style.configure("TFrame", background="white")
+        style.configure("TLabel", background="white", foreground="black")
+        style.configure("TButton", background="white", foreground="black")
+        style.configure("TEntry", fieldbackground="white", foreground="black")
+        style.configure("TCombobox", fieldbackground="white", background="white", foreground="black")
 
     def create_menubar(self):
         menubar = tk.Menu(self)
