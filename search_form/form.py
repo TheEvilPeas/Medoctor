@@ -6,17 +6,11 @@ from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 import sys, os, json
 
-APP_NAME = "Medoctor"
-
-
-def appdata_dir():
-    base = os.environ.get("APPDATA", os.path.expanduser("~"))
-    path = os.path.join(base, APP_NAME)
-    os.makedirs(path, exist_ok=True)
-    return path
 
 def settings_path():
-    return os.path.join(appdata_dir(), "settings.json")
+    path = resource_path("res/settings.json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
 
 def resource_path(rel_path: str) -> str:
     """
@@ -29,39 +23,33 @@ def resource_path(rel_path: str) -> str:
         base = os.path.abspath(".")
     return os.path.join(base, rel_path)
 
-SETTINGS_PATH = settings_path()  # теперь в %APPDATA%\Medoctor\settings.json
+SETTINGS_PATH = settings_path()
 TEMPLATE_PATH = resource_path("conclusion_form/res/template.docx")
 XML_PATH      = resource_path("conclusion_form/res/data.xml")
-USER_XML_PATH = os.path.join(appdata_dir(), "data.xml")
-if not os.path.exists(USER_XML_PATH):
-    import shutil
-    shutil.copy2(XML_PATH, USER_XML_PATH)
+
 CALENDAR_PNG  = resource_path("conclusion_form/res/calendar.png")
 PRIKAZ_XLSX   = resource_path("search_form/input/prikaz29n.xlsx")
-SUMMER_XLSX   = resource_path("search_form/input/summer.xlsx")
-
-def user_prikaz_path():
-    return os.path.join(appdata_dir(), "prikaz29n.xlsx")
 
 def get_prikaz_read_path():
-    """Если у пользователя уже есть копия в %APPDATA% — читаем её, иначе ресурсную."""
-    up = user_prikaz_path()
-    return up if os.path.exists(up) else PRIKAZ_XLSX
+    return PRIKAZ_XLSX
 
 def open_prikaz_for_edit():
-    """Гарантируем копию в %APPDATA% и открываем её на редактирование (Excel)."""
-    import shutil
-    dst = user_prikaz_path()
+    path = PRIKAZ_XLSX
     try:
-        os.makedirs(appdata_dir(), exist_ok=True)
-        if not os.path.exists(dst):
-            # если ресурсный файл упакован PyInstaller’ом — он доступен по PRIKAZ_XLSX
-            if os.path.exists(PRIKAZ_XLSX):
-                shutil.copyfile(PRIKAZ_XLSX, dst)
-            else:
-                # на всякий случай создадим пустой шаблон
-                pd.DataFrame(columns=["n", "doctors_name", "inspection", "analysis"]).to_excel(dst, index=False)
-        os.startfile(dst)
+        folder = os.path.dirname(path)
+        if folder:
+            os.makedirs(folder, exist_ok=True)
+        if not os.path.exists(path):
+            pd.DataFrame(columns=["n", "doctors_name", "inspection", "analysis"]).to_excel(path, index=False)
+
+        if sys.platform == "darwin":
+            import subprocess
+            subprocess.Popen(["open", path])
+        elif os.name == "nt":
+            os.startfile(path)
+        else:
+            import subprocess
+            subprocess.Popen(["xdg-open", path])
     except Exception as e:
         messagebox.showerror("Ошибка", f"Не удалось подготовить/открыть файл приказа:\n{e}")
 
@@ -362,18 +350,20 @@ class SearchForm(tk.Frame):
         # Предпросмотр "Результаты"
         self.render_to_tree(self.preview_main_tree, df_unique)
 
-        # --- ДОБАВЛЯЕМ ЛИСТ Summer ---
-        summer_path = SUMMER_XLSX
-        if os.path.exists(summer_path):
+        # --- ДОБАВЛЯЕМ ЛИСТ Summer из второго листа файла приказа ---
+        if os.path.exists(PRIKAZ_XLSX):
             try:
-                summer_workbook = load_workbook(summer_path)
-                summer_sheet = summer_workbook.active
+                prikaz_workbook = load_workbook(PRIKAZ_XLSX)
+                if len(prikaz_workbook.sheetnames) > 1:
+                    summer_sheet = prikaz_workbook[prikaz_workbook.sheetnames[1]]
 
-                results_workbook = load_workbook(save_path)
-                results_sheet = results_workbook.create_sheet(title='Summer')
-                for row in summer_sheet.iter_rows(values_only=True):
-                    results_sheet.append(row)
-                results_workbook.save(save_path)
+                    results_workbook = load_workbook(save_path)
+                    if 'Summer' in results_workbook.sheetnames:
+                        del results_workbook['Summer']
+                    results_sheet = results_workbook.create_sheet(title='Summer')
+                    for row in summer_sheet.iter_rows(values_only=True):
+                        results_sheet.append(row)
+                    results_workbook.save(save_path)
             except PermissionError:
                 messagebox.showerror(
                     "Ошибка",
@@ -413,6 +403,10 @@ class SearchForm(tk.Frame):
             ref_values = pd.concat([df_sheet1[c].dropna().astype(str).str.strip() for c in cols], ignore_index=True)
             ref_set = set(v for v in ref_values if v)
 
+            if 'Summer' not in load_workbook(save_path).sheetnames:
+                self.render_to_tree(self.preview_summer_tree, pd.DataFrame())
+                return
+
             summer_df = pd.read_excel(save_path, sheet_name="Summer", header=None)
             if not summer_df.empty and summer_df.iloc[0].notna().any():
                 summer_df.columns = summer_df.iloc[0].astype(str)
@@ -436,14 +430,17 @@ class SearchForm(tk.Frame):
 
                 while summer_df.shape[1] < 4:
                     summer_df[f'col_{summer_df.shape[1] + 1}'] = ''
+
                 while len(summer_df) < 2:
                     summer_df.loc[len(summer_df)] = [''] * summer_df.shape[1]
 
+                summer_df.iloc[:, 3] = summer_df.iloc[:, 3].astype(object)
                 summer_df.iat[0, 3] = "ИТОГО"
-                summer_df.iat[1, 3] = sum_value
+                summer_df.iat[1, 3] = str(sum_value)
 
             self.render_to_tree(self.preview_summer_tree, summer_df)
-        except Exception:
+        except Exception as e:
+            messagebox.showerror("Ошибка Summer", str(e))
             self.render_to_tree(self.preview_summer_tree, pd.DataFrame())
 
 
