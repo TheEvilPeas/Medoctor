@@ -2520,3 +2520,216 @@ sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
 __file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
 [DEBUG] program entry
 [DEBUG] MainApp created
+
+=== Запуск программы: 2026-04-01 07:04:45 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tkinter/__init__.py", line 2093, in __call__
+    return self.func(*args)
+           ~~~~~~~~~^^^^^^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/main.py", line 223, in <lambda>
+    forms_menu.add_command(label="Проверка анализов", command=lambda: self.show_form("analyschecker"))
+                                                                      ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/main.py", line 479, in show_form
+    self.current_form_frame = AnalysCheckerForm(self.forms_area, main_app=self)
+                              ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/analyschecker_form/form.py", line 164, in __init__
+    self.build_ui()
+    ~~~~~~~~~~~~~^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/analyschecker_form/form.py", line 216, in build_ui
+    tk.Button(button_row, text="Редактировать заключения", command=self.open_conclusions_editor).pack(side="right", padx=(0, 8))
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'AnalysCheckerForm' object has no attribute 'open_conclusions_editor'
+
+=== Запуск программы: 2026-04-01 07:04:49 ===
+
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:06:03 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tkinter/__init__.py", line 2093, in __call__
+    return self.func(*args)
+           ~~~~~~~~~^^^^^^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/main.py", line 223, in <lambda>
+    forms_menu.add_command(label="Проверка анализов", command=lambda: self.show_form("analyschecker"))
+                                                                      ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/main.py", line 490, in show_form
+    self.current_form_frame = AnalysCheckerForm(self.forms_area, main_app=self)
+                              ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/analyschecker_form/form.py", line 164, in __init__
+    self.build_ui()
+    ~~~~~~~~~~~~~^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/analyschecker_form/form.py", line 216, in build_ui
+    tk.Button(button_row, text="Редактировать заключения", command=self.open_conclusions_editor).pack(side="right", padx=(0, 8))
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'AnalysCheckerForm' object has no attribute 'open_conclusions_editor'
+
+=== Запуск программы: 2026-04-01 07:06:07 ===
+
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tkinter/__init__.py", line 2093, in __call__
+    return self.func(*args)
+           ~~~~~~~~~^^^^^^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/main.py", line 223, in <lambda>
+    forms_menu.add_command(label="Проверка анализов", command=lambda: self.show_form("analyschecker"))
+                                                                      ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/main.py", line 490, in show_form
+    self.current_form_frame = AnalysCheckerForm(self.forms_area, main_app=self)
+                              ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/analyschecker_form/form.py", line 164, in __init__
+    self.build_ui()
+    ~~~~~~~~~~~~~^^
+  File "/Users/denisrudko/PycharmProjects/Medoctor/analyschecker_form/form.py", line 216, in build_ui
+    tk.Button(button_row, text="Редактировать заключения", command=self.open_conclusions_editor).pack(side="right", padx=(0, 8))
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'AnalysCheckerForm' object has no attribute 'open_conclusions_editor'
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:08:05 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:10:33 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:14:54 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:16:50 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:19:07 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:20:10 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:21:33 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:22:42 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:23:35 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:24:26 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:25:25 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:25:40 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:25:47 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:25:56 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished
+
+=== Запуск программы: 2026-04-01 07:26:03 ===
+
+cwd: /Users/denisrudko/PycharmProjects/Medoctor
+sys.executable: /Users/denisrudko/PycharmProjects/Medoctor/.venv1/bin/python
+__file__: /Users/denisrudko/PycharmProjects/Medoctor/main.py
+[DEBUG] program entry
+[DEBUG] MainApp created
+[DEBUG] mainloop finished

@@ -172,7 +172,7 @@ class MainApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Генератор медицинских заключений")
-        self.geometry("680x550")
+        self.geometry("680x750")
         self.apply_light_theme()
         self.settings = load_settings()
         self.current_form_frame = None
@@ -468,7 +468,18 @@ class MainApp(tk.Tk):
 
     def show_form(self, form_key):
         if self.current_form_frame is not None:
-            self.current_form_frame.destroy()
+            try:
+                self.current_form_frame.destroy()
+            except Exception:
+                pass
+            self.current_form_frame = None
+
+        for child in self.forms_area.winfo_children():
+            try:
+                child.destroy()
+            except Exception:
+                pass
+
         if form_key == "conclusion":
             self.current_form_frame = ConclusionForm(self.forms_area, main_app=self)
             self.current_form_frame.pack(fill="both", expand=True)

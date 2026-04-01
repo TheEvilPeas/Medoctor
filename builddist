@@ -1,8 +1,2 @@
-#!/bin/bash
-set -e
-
-python -m PyInstaller --noconfirm --clean --noconsole --name Medoctor --icon=res/image.icns \
-  --add-data "conclusion_form/res:conclusion_form/res" \
-  --add-data "search_form/input:search_form/input" \
-  --add-data "analyschecker_form/input:analyschecker_form/input" \
-  main.py
+python -m pip install pyinstaller pywin32
+python -m PyInstaller --noconfirm --clean --noconsole --name Medoctor --add-data "conclusion_form\res;conclusion_form\res" --add-data "search_form\input;search_form\input" --add-data "analyschecker_form\input;analyschecker_form\input" --add-data "analyschecker_form;analyschecker_form" main.py

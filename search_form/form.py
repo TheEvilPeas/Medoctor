@@ -191,8 +191,11 @@ class SearchForm(tk.Frame):
         self.add_entry()
 
         # --- Предпросмотр (как листы в Excel) ---
-        self.preview_notebook = ttk.Notebook(self)
-        self.preview_notebook.pack(fill="both", expand=True, padx=10, pady=(5, 10))
+        self.preview_area = tk.Frame(self)
+        self.preview_area.pack(fill="both", expand=True, padx=10, pady=(5, 0))
+
+        self.preview_notebook = ttk.Notebook(self.preview_area)
+        self.preview_notebook.pack(fill="both", expand=True)
 
         # Лист "Результаты"
         tab_results = ttk.Frame(self.preview_notebook)
@@ -224,32 +227,49 @@ class SearchForm(tk.Frame):
         tab_summer.rowconfigure(0, weight=1)
         tab_summer.columnconfigure(0, weight=1)
 
+        self.summer_total_var = tk.StringVar(value="Итоговая сумма: 0")
+        self.summer_total_bar = tk.Frame(self)
+        self.summer_total_bar.pack(side="bottom", fill="x", padx=10, pady=(6, 10))
+
+        self.summer_total_label = tk.Label(
+            self.summer_total_bar,
+            textvariable=self.summer_total_var,
+            anchor="w",
+            relief="groove",
+            bd=1,
+            padx=8,
+            pady=4
+        )
+        self.summer_total_label.pack(fill="x")
+
+        # Лист "Summer"
+        # (duplicate block removed)
+
     def print_results(self):
         if not self.last_save_path or not os.path.exists(self.last_save_path):
             messagebox.showerror("Печать", "Сначала сформируйте файл (нажмите «Поиск»).")
             return
+
+        if os.name != "nt":
+            messagebox.showerror("Печать", "Печать через Excel доступна только в Windows.")
+            return
+
         try:
             import win32com.client as win32
         except ImportError:
-            import subprocess, sys
-            answer = tk.messagebox.askyesno(
-                "Требуется установка",
-                "Для печати нужен пакет 'pywin32'. Установить сейчас?"
+            messagebox.showerror(
+                "Печать",
+                "В этой сборке отсутствует модуль 'pywin32'.\n\n"
+                "Чтобы печать работала на всех ПК без установки вручную,\n"
+                "нужно установить 'pywin32' на Windows-компьютере перед сборкой программы\n"
+                "и пересобрать приложение."
             )
-            if answer:
-                subprocess.check_call([sys.executable, "-m", "pip", "install", "pywin32"])
-                import win32com.client
-            else:
-                tk.messagebox.showwarning("Отмена", "Печать невозможна без установки 'pywin32'.")
-                return
+            return
 
-        # Открываем в Excel и показываем стандартный диалог печати
         excel = win32.DispatchEx("Excel.Application")
         excel.Visible = True
         wb = excel.Workbooks.Open(self.last_save_path)
-        # 8 — xlDialogPrint (диалог печати), 7 — xlDialogPageSetup (параметры страницы)
         excel.Application.Dialogs(8).Show()
-        # оставляем Excel открытым — пользователь может менять настройки/печать
 
     def render_to_tree(self, tree: ttk.Treeview, df: pd.DataFrame):
         # очистка
@@ -350,27 +370,7 @@ class SearchForm(tk.Frame):
         # Предпросмотр "Результаты"
         self.render_to_tree(self.preview_main_tree, df_unique)
 
-        # --- ДОБАВЛЯЕМ ЛИСТ Summer из второго листа файла приказа ---
-        if os.path.exists(PRIKAZ_XLSX):
-            try:
-                prikaz_workbook = load_workbook(PRIKAZ_XLSX)
-                if len(prikaz_workbook.sheetnames) > 1:
-                    summer_sheet = prikaz_workbook[prikaz_workbook.sheetnames[1]]
-
-                    results_workbook = load_workbook(save_path)
-                    if 'Summer' in results_workbook.sheetnames:
-                        del results_workbook['Summer']
-                    results_sheet = results_workbook.create_sheet(title='Summer')
-                    for row in summer_sheet.iter_rows(values_only=True):
-                        results_sheet.append(row)
-                    results_workbook.save(save_path)
-            except PermissionError:
-                messagebox.showerror(
-                    "Ошибка",
-                    "Невозможно обновить файл результатов.\n"
-                    "Возможно, файл 'results.xlsx' открыт в другой программе."
-                )
-                return
+        # (Summer tab is preview-only; do not add to Excel file)
 
         # Автоматическая подгонка ширины столбцов первого листа
         try:
@@ -396,52 +396,55 @@ class SearchForm(tk.Frame):
             )
             return
 
-        # --- Предпросмотр "Summer" с пересчётом 'Соответствие' и суммой ---
+        # --- Предпросмотр "Summer" только в программе, без записи в results.xlsx ---
         try:
-            df_sheet1 = pd.read_excel(save_path, sheet_name="Sheet1")
-            cols = [c for c in ['Врачи', 'Обследования', 'Анализы'] if c in df_sheet1.columns]
-            ref_values = pd.concat([df_sheet1[c].dropna().astype(str).str.strip() for c in cols], ignore_index=True)
-            ref_set = set(v for v in ref_values if v)
+            if os.path.exists(PRIKAZ_XLSX):
+                prikaz_workbook = load_workbook(PRIKAZ_XLSX, data_only=True)
+                if len(prikaz_workbook.sheetnames) > 1:
+                    summer_sheet = prikaz_workbook[prikaz_workbook.sheetnames[1]]
+                    summer_rows = list(summer_sheet.iter_rows(values_only=True))
 
-            if 'Summer' not in load_workbook(save_path).sheetnames:
+                    if summer_rows:
+                        summer_df = pd.DataFrame(summer_rows)
+                        if not summer_df.empty and summer_df.iloc[0].notna().any():
+                            summer_df.columns = summer_df.iloc[0].astype(str)
+                            summer_df = summer_df.iloc[1:].reset_index(drop=True)
+
+                        cols = [c for c in ['Врачи', 'Обследования', 'Анализы'] if c in df_unique.columns]
+                        ref_values = pd.concat([df_unique[c].dropna().astype(str).str.strip() for c in cols], ignore_index=True)
+                        ref_set = set(v for v in ref_values if v)
+
+                        sum_value = 0
+                        if len(summer_df.columns):
+                            check_col = summer_df.columns[0]
+                            summer_df['Соответствие'] = (
+                                summer_df[check_col].astype(str).str.strip()
+                                .apply(lambda v: '+' if v and v in ref_set else '')
+                            )
+
+                            if len(summer_df.columns) >= 2:
+                                values_col = summer_df.columns[1]
+                                matched_mask = summer_df['Соответствие'].astype(str).str.strip() == '+'
+                                sum_value = pd.to_numeric(
+                                    summer_df.loc[matched_mask, values_col],
+                                    errors='coerce'
+                                ).fillna(0).sum()
+
+                        self.render_to_tree(self.preview_summer_tree, summer_df)
+                        self.summer_total_var.set(f"Итоговая сумма: {sum_value}")
+                    else:
+                        self.render_to_tree(self.preview_summer_tree, pd.DataFrame())
+                        self.summer_total_var.set("Итоговая сумма: 0")
+                else:
+                    self.render_to_tree(self.preview_summer_tree, pd.DataFrame())
+                    self.summer_total_var.set("Итоговая сумма: 0")
+            else:
                 self.render_to_tree(self.preview_summer_tree, pd.DataFrame())
-                return
-
-            summer_df = pd.read_excel(save_path, sheet_name="Summer", header=None)
-            if not summer_df.empty and summer_df.iloc[0].notna().any():
-                summer_df.columns = summer_df.iloc[0].astype(str)
-                summer_df = summer_df.iloc[1:].reset_index(drop=True)
-
-            if len(summer_df.columns):
-                check_col = summer_df.columns[0]
-                summer_df['Соответствие'] = (
-                    summer_df[check_col].astype(str).str.strip()
-                    .apply(lambda v: '+' if v and v in ref_set else '')
-                )
-
-            if len(summer_df.columns) >= 2:
-                values_col = summer_df.columns[1]
-                mask_col = "Соответствие" if "Соответствие" in summer_df.columns else summer_df.columns[
-                    min(2, len(summer_df.columns) - 1)]
-                sum_value = pd.to_numeric(
-                    summer_df.loc[summer_df[mask_col].astype(str).str.strip() == '+', values_col],
-                    errors='coerce'
-                ).sum()
-
-                while summer_df.shape[1] < 4:
-                    summer_df[f'col_{summer_df.shape[1] + 1}'] = ''
-
-                while len(summer_df) < 2:
-                    summer_df.loc[len(summer_df)] = [''] * summer_df.shape[1]
-
-                summer_df.iloc[:, 3] = summer_df.iloc[:, 3].astype(object)
-                summer_df.iat[0, 3] = "ИТОГО"
-                summer_df.iat[1, 3] = str(sum_value)
-
-            self.render_to_tree(self.preview_summer_tree, summer_df)
+                self.summer_total_var.set("Итоговая сумма: 0")
         except Exception as e:
             messagebox.showerror("Ошибка Summer", str(e))
             self.render_to_tree(self.preview_summer_tree, pd.DataFrame())
+            self.summer_total_var.set("Итоговая сумма: 0")
 
 
 
