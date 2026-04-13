@@ -71,6 +71,9 @@ class ConclusionForm(tk.Frame):
         self.records_selected_keys = set()
         self.records_all_visible_selected = False
         self.records_column_filters = {}
+        self.records_cache = None
+        self.records_search_after_id = None
+        self.records_filter_windows = []
 
         # --- Переменные формы ---
         self.type_var = tk.StringVar(value="предварительный")
@@ -281,8 +284,6 @@ class ConclusionForm(tk.Frame):
                     self.birthday_entry.delete(0, tk.END)
                     self.birthday_entry.insert(0, rec["birthday"])
                     self.sex_var.set(rec["sex"])
-                    self.ids_entry.delete(0, tk.END)
-                    self.ids_entry.insert(0, rec.get("ids_date", ""))
                     self.card_number.set(rec.get("card_number", ""))
                     return
 
@@ -885,6 +886,7 @@ class ConclusionForm(tk.Frame):
 
         self.records_selected_keys = set()
         self.records_all_visible_selected = False
+        self.records_cache = self._read_all_xml_records(force_reload=True)
 
         top = tk.Toplevel(self)
         self.records_editor_window = top
@@ -892,6 +894,7 @@ class ConclusionForm(tk.Frame):
         top.geometry("1400x720")
 
         def on_close():
+            self.close_records_filter_windows()
             if self.records_editor_window and self.records_editor_window.winfo_exists():
                 self.records_editor_window.destroy()
             self.records_editor_window = None
@@ -921,7 +924,7 @@ class ConclusionForm(tk.Frame):
         search_entry.grid(row=0, column=7, padx=(6, 8), sticky="ew")
         filters_frame.grid_columnconfigure(7, weight=1)
 
-        tk.Button(filters_frame, text="Применить", command=self.refresh_records_tree, bg="#4CAF50", fg="white").grid(row=0, column=8, padx=(4, 0))
+        tk.Button(filters_frame, text="Применить", command=self.apply_records_filters, bg="#4CAF50", fg="white").grid(row=0, column=8, padx=(4, 0))
         tk.Button(filters_frame, text="Сбросить", command=self.reset_records_filters).grid(row=0, column=9, padx=(6, 0))
 
         tree_frame = tk.Frame(top)
@@ -933,11 +936,18 @@ class ConclusionForm(tk.Frame):
         )
 
         self.records_tree = ttk.Treeview(tree_frame, columns=columns, show="headings")
-        self.records_tree.pack(side="left", fill="both", expand=True)
 
         y_scroll = ttk.Scrollbar(tree_frame, orient="vertical", command=self.records_tree.yview)
-        y_scroll.pack(side="right", fill="y")
-        self.records_tree.configure(yscrollcommand=y_scroll.set)
+        x_scroll = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.records_tree.xview)
+
+        self.records_tree.grid(row=0, column=0, sticky="nsew")
+        y_scroll.grid(row=0, column=1, sticky="ns")
+        x_scroll.grid(row=1, column=0, sticky="ew")
+
+        tree_frame.rowconfigure(0, weight=1)
+        tree_frame.columnconfigure(0, weight=1)
+
+        self.records_tree.configure(yscrollcommand=y_scroll.set, xscrollcommand=x_scroll.set)
 
         self.records_tree.heading("selected", text="☐", command=self.toggle_all_records_selection)
         self.records_tree.heading("type", text="Тип осмотра ▼", command=lambda: self.open_records_column_filter("type", "Тип осмотра"))
@@ -974,7 +984,7 @@ class ConclusionForm(tk.Frame):
 
         self.records_tree.bind("<Button-1>", self.on_records_tree_click)
         self.records_tree.bind("<Double-1>", self.on_records_tree_double_click)
-        self.records_search_var.trace_add("write", lambda *_: self.refresh_records_tree())
+        self.records_search_var.trace_add("write", lambda *_: self.schedule_records_refresh())
 
         actions_frame = tk.Frame(top)
         actions_frame.pack(fill="x", padx=10, pady=(0, 10))
@@ -1003,6 +1013,32 @@ class ConclusionForm(tk.Frame):
         self.records_date_to_var.set("")
         self.records_search_var.set("")
         self.records_column_filters = {}
+        self.refresh_records_tree()
+
+    def close_records_filter_windows(self):
+        alive_windows = []
+        for win in self.records_filter_windows:
+            try:
+                if win and win.winfo_exists():
+                    win.destroy()
+            except Exception:
+                pass
+        self.records_filter_windows = alive_windows
+
+    def apply_records_filters(self):
+        self.close_records_filter_windows()
+        self.refresh_records_tree()
+
+    def schedule_records_refresh(self, delay=250):
+        if self.records_search_after_id:
+            try:
+                self.after_cancel(self.records_search_after_id)
+            except Exception:
+                pass
+        self.records_search_after_id = self.after(delay, self._run_scheduled_records_refresh)
+
+    def _run_scheduled_records_refresh(self):
+        self.records_search_after_id = None
         self.refresh_records_tree()
 
     def _records_column_title(self, column_name):
@@ -1048,6 +1084,17 @@ class ConclusionForm(tk.Frame):
         top.title(f"Фильтр: {title}")
         top.geometry("420x520")
         top.resizable(False, False)
+        self.records_filter_windows.append(top)
+
+        def on_filter_close():
+            try:
+                if top in self.records_filter_windows:
+                    self.records_filter_windows.remove(top)
+            except Exception:
+                pass
+            top.destroy()
+
+        top.protocol("WM_DELETE_WINDOW", on_filter_close)
 
         tk.Label(top, text=f"Фильтр по столбцу: {title}", font=("Arial", 10, "bold")).pack(anchor="w", padx=10, pady=(10, 6))
 
@@ -1123,12 +1170,12 @@ class ConclusionForm(tk.Frame):
                 self.records_column_filters[column_name] = selected_values
 
             self.refresh_records_tree()
-            top.destroy()
+            on_filter_close()
 
         def reset_filter():
             self.records_column_filters.pop(column_name, None)
             self.refresh_records_tree()
-            top.destroy()
+            on_filter_close()
 
         search_var.trace_add("write", rebuild_list)
         rebuild_list()
@@ -1147,14 +1194,19 @@ class ConclusionForm(tk.Frame):
         except ValueError:
             return None
 
-    def _read_all_xml_records(self):
+    def _read_all_xml_records(self, force_reload=False):
+        if self.records_cache is not None and not force_reload:
+            return [dict(record) for record in self.records_cache]
+
         if not os.path.exists(XML_PATH):
+            self.records_cache = []
             return []
 
         tree = ET.parse(XML_PATH)
         root = tree.getroot()
         records = []
         for xml_index, person in enumerate(root.findall("person")):
+            saved_id = person.findtext("id", default="")
             record = {
                 "type": person.findtext("type", default="предварительный"),
                 "organization": person.findtext("organization", default=""),
@@ -1169,12 +1221,13 @@ class ConclusionForm(tk.Frame):
                 "card_number": person.findtext("card_number", default=""),
                 "ids_date": person.findtext("ids_date", default=""),
                 "date_created": person.findtext("date_created", default=""),
-                "id": person.findtext("id", default=""),
+                "id": saved_id,
                 "_xml_index": xml_index,
             }
-            record["_select_key"] = record["id"] or f"xml_index:{xml_index}"
+            record["_select_key"] = f"xml_index:{xml_index}|id:{saved_id}"
             records.append(record)
-        return records
+        self.records_cache = [dict(record) for record in records]
+        return [dict(record) for record in self.records_cache]
 
     def refresh_records_tree(self):
         if not hasattr(self, "records_tree") or self.records_tree is None:
@@ -1339,6 +1392,7 @@ class ConclusionForm(tk.Frame):
         self.prettify_xml(XML_PATH)
 
         self.records_selected_keys.clear()
+        self.records_cache = self._read_all_xml_records(force_reload=True)
         self.data = self.load_data()
         self.update_comboboxes()
         self.refresh_records_tree()
@@ -1514,6 +1568,7 @@ class ConclusionForm(tk.Frame):
             tree.write(XML_PATH, encoding="utf-8", xml_declaration=True)
             self.prettify_xml(XML_PATH)
             top.destroy()
+            self.records_cache = self._read_all_xml_records(force_reload=True)
             self.data = self.load_data()
             self.update_comboboxes()
             self.refresh_records_tree()

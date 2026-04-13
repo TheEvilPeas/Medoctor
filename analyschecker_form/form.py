@@ -128,11 +128,11 @@ DEFAULT_MY_TABLE_DOWNLOAD_URL = MY_TABLE_DOWNLOAD_URL
 AZURE_CLIENT_ID = "17b59301-c746-4e1a-89fa-942ef6465f00"                  # client id приложения Azure / Entra
 AZURE_TENANT = "consumers"            # для личного OneDrive: consumers
 TOKEN_CACHE_FILE = "ms_token_cache.json"
-DETAILS_TABLE_FILE = "details_table_nov.xlsx"           # локальный файл details_table
-DETAILS_TABLE_SHEET_NAME = "Прейскурант"      # имя листа в details_table
+DETAILS_TABLE_FILE = "analyschecker_form/input/details_table.xlsx"           # локальный файл details_table
+DETAILS_TABLE_SHEET_NAME = "1"      # имя листа в details_table
 DETAILS_TABLE_START_ROW = 1            # номер строки, с которой начинаем добавлять записи; можно переопределить из главной программы
 DETAILS_TABLE_END_ROW = None           # номер конечной строки включительно; None = читать до конца; можно переопределить из главной программы
-PRICE_FILE = "input/price.xls"
+PRICE_FILE = "analyschecker_form/input/price.xls"
 PRICE_MAIN_SHEET_NAME = "1"
 PRICE_EXTRA_SHEET_NAME = "2"
 RESULT_FILE = "compare_result.xlsx"
@@ -140,7 +140,7 @@ RESULT_FILE = "compare_result.xlsx"
 DEFAULT_DETAILS_TABLE_FILE = DETAILS_TABLE_FILE
 DEFAULT_RESULT_FILE = RESULT_FILE
 
-MY_SHEET_NAME = "2025"
+MY_SHEET_NAME = "2026"
 MY_TABLE_START_ROW = 1
 MY_TABLE_END_ROW = None
 DEFAULT_MY_SHEET_NAME = MY_SHEET_NAME
@@ -375,17 +375,18 @@ MY_COL_2 = 2          # во 2 столбце ищем "анализы" и ФИ�
 MY_DATE_COL = 3       # в строке с ФИО тут дата, она относится ко всем его анализам
 MY_ANALYSIS_COL = 4   # колонка с анализом
 MY_SUM_COL = 5        # колонка с суммой
+MY_MATCH_TEXT_COL = 7 # дополнительный текстовый столбец, где может быть фамилия с инициалами
 
 # details_table
-# DETAILS_DATE_COL = 2   # дата в 1 столбце, действует до следующей новой даты
-# DETAILS_FIO_COL = 6
-# DETAILS_ANALYSIS_COL = 10
-# DETAILS_SUM_COL = 15
+DETAILS_DATE_COL = 2   # дата в 1 столбце, действует до следующей новой даты
+DETAILS_FIO_COL = 6
+DETAILS_ANALYSIS_COL = 10
+DETAILS_SUM_COL = 15
 
-DETAILS_DATE_COL = 2
-DETAILS_FIO_COL = 1
-DETAILS_ANALYSIS_COL = 3
-DETAILS_SUM_COL = 4
+# DETAILS_DATE_COL = 2
+# DETAILS_FIO_COL = 1
+# DETAILS_ANALYSIS_COL = 3
+# DETAILS_SUM_COL = 4
 
 
 def resolve_my_table_source(url: str) -> str:
@@ -717,41 +718,50 @@ def get_online_excel_rows(source: str, worksheet_name: str, start_row: int = 1, 
     source = resolve_my_table_source(source)
     start_row = max(1, int(start_row or 1))
 
-    if source.startswith("http://") or source.startswith("https://"):
-        temp_path = download_my_table_to_temp(source)
+    wb = None
+    temp_path = None
+    try:
+        if source.startswith("http://") or source.startswith("https://"):
+            temp_path = download_my_table_to_temp(source)
+            try:
+                wb = load_workbook(temp_path, data_only=True, read_only=True)
+            except BadZipFile as e:
+                raise RuntimeError(
+                    "Скачанный через Microsoft Graph файл не является настоящим .xlsx."
+                ) from e
+        else:
+            wb = load_workbook(source, data_only=True, read_only=True)
+
+        ws = wb[worksheet_name] if worksheet_name in wb.sheetnames else wb[wb.sheetnames[0]]
+        # Берём ещё +1 столбец справа, потому что в скачанной my_table колонки
+        # иногда сдвигаются, и сумма оказывается в 6-м столбце.
+        max_needed_col = max(MY_COL_2, MY_DATE_COL, MY_ANALYSIS_COL, MY_SUM_COL + 1, MY_MATCH_TEXT_COL)
+        rows = [list(row) for row in ws.iter_rows(min_col=1, max_col=max_needed_col, values_only=True)]
+
+        if end_row is None:
+            selected = rows[start_row - 1:]
+        else:
+            end_row = max(start_row, int(end_row))
+            selected = rows[start_row - 1:end_row]
+
+        result = []
+        real_row_num = start_row
+        for row in selected:
+            result.append((real_row_num, list(row)))
+            real_row_num += 1
+
+        return result
+    finally:
         try:
-            wb = load_workbook(temp_path, data_only=True, read_only=True)
-        except BadZipFile as e:
-            raise RuntimeError(
-                "Скачанный через Microsoft Graph файл не является настоящим .xlsx."
-            ) from e
-        finally:
+            if wb is not None:
+                wb.close()
+        except Exception:
+            pass
+        if temp_path:
             try:
                 os.remove(temp_path)
             except OSError:
                 pass
-    else:
-        wb = load_workbook(source, data_only=True, read_only=True)
-
-    ws = wb[worksheet_name] if worksheet_name in wb.sheetnames else wb[wb.sheetnames[0]]
-    # Берём ещё +1 столбец справа, потому что в скачанной my_table колонки
-    # иногда сдвигаются, и сумма оказывается в 6-м столбце.
-    max_needed_col = max(MY_COL_2, MY_DATE_COL, MY_ANALYSIS_COL, MY_SUM_COL + 1)
-    rows = [list(row) for row in ws.iter_rows(min_col=1, max_col=max_needed_col, values_only=True)]
-
-    if end_row is None:
-        selected = rows[start_row - 1:]
-    else:
-        end_row = max(start_row, int(end_row))
-        selected = rows[start_row - 1:end_row]
-
-    result = []
-    real_row_num = start_row
-    for row in selected:
-        result.append((real_row_num, list(row)))
-        real_row_num += 1
-
-    return result
 
 
 
@@ -991,6 +1001,60 @@ def fio_surname_gender_fallback_key(text: str) -> str:
     surname = fio_surname_only_key(text)
     return normalize_surname_for_gender_fallback(surname)
 
+def fio_surname_with_initials_variants(text: str) -> set[str]:
+    """
+    Возвращает варианты поиска по фамилии и инициалам.
+    """
+    parts = fio_parts(text)
+    if not parts:
+        return set()
+
+    surname = parts[0]
+    variants = {surname}
+
+    first_initial = ""
+    second_initial = ""
+
+    if len(parts) >= 2 and parts[1]:
+        first_initial = parts[1][0]
+    if len(parts) >= 3 and parts[2]:
+        second_initial = parts[2][0]
+
+    if first_initial and second_initial:
+        variants.add(f"{surname} {first_initial}.{second_initial}")
+        variants.add(f"{surname} {first_initial}. {second_initial}.")
+        variants.add(f"{surname} {first_initial}{second_initial}")
+    elif first_initial:
+        variants.add(f"{surname} {first_initial}.")
+        variants.add(f"{surname} {first_initial}")
+
+    return {normalize_spaces(v).upper() for v in variants if normalize_spaces(v)}
+
+
+def match_text_contains_fio_hint(match_text, fio_text) -> bool:
+    """
+    Проверяет, содержит ли произвольный текст в 7-м столбце намёк на ФИО:
+    - фамилию + инициалы
+    - либо хотя бы фамилию
+    """
+    haystack_raw = cell_str(match_text)
+    if not haystack_raw:
+        return False
+
+    haystack = normalize_spaces(haystack_raw).upper()
+    haystack_compact = re.sub(r"\s+", " ", haystack)
+
+    for variant in fio_surname_with_initials_variants(fio_text):
+        if variant and variant in haystack_compact:
+            return True
+
+    surname = fio_surname_key(fio_text)
+    if surname:
+        surname_pattern = rf"(^|[^A-ZА-ЯЁ]){re.escape(surname)}([^A-ZА-ЯЁ]|$)"
+        if re.search(surname_pattern, haystack):
+            return True
+
+    return False
 
 # --- New helper functions ---
 def fio_name_surname_analysis_key(fio: str, analysis) -> str:
@@ -1377,6 +1441,35 @@ def parse_date(value):
 
     return None
 
+def parse_date_to_datetime(value):
+    """
+    Возвращает datetime для сравнения близости дат.
+    Поддерживает даты в форматах дд.мм.гггг и yyyy-mm-dd.
+    """
+    normalized = parse_date(value)
+    if not normalized:
+        return None
+
+    try:
+        return datetime.strptime(normalized, "%d.%m.%Y")
+    except Exception:
+        return None
+
+
+def date_distance_in_days(left, right):
+    """
+    Возвращает расстояние между датами в днях.
+    Если одну из дат распарсить не удалось, возвращает большое число,
+    чтобы такие записи уходили в конец сортировки.
+    """
+    left_dt = parse_date_to_datetime(left)
+    right_dt = parse_date_to_datetime(right)
+
+    if left_dt is None or right_dt is None:
+        return 10 ** 9
+
+    return abs((left_dt - right_dt).days)
+
 def format_output_date(value):
     """
     Приводит дату к виду дд.мм.гг для записи в результат.
@@ -1446,6 +1539,7 @@ def is_mo_marker(value) -> bool:
     return text in {"М/О", "М\\О", "МО"}
 
 
+
 def is_matchable_sum_value(value) -> bool:
     """
     Для поиска учитываем:
@@ -1454,6 +1548,14 @@ def is_matchable_sum_value(value) -> bool:
     Всё остальное из столбца суммы для поиска игнорируем.
     """
     return isinstance(value, (int, float)) or is_mo_marker(value)
+
+# Новый helper: проверка наличия М/О в анализе или в сумме
+def has_mo_in_analysis_or_sum(analysis_value, sum_value) -> bool:
+    """
+    Возвращает True, если пометка М/О указана либо в столбце анализа,
+    либо в столбце суммы.
+    """
+    return is_mo_marker(analysis_value) or is_mo_marker(sum_value)
 
 
 # --- Helper: фильтрация записей по анализу для этапов без анализа в ключе ---
@@ -1475,24 +1577,75 @@ def is_matchable_analysis_value(value, target_analysis) -> bool:
 
     return analysis_key == target_key
 
+def is_ignored_analysis_value(value) -> bool:
+    """
+    Значения из стоп-листа, которые нужно полностью исключать из обработки.
+    Если в анализе стоит одно из них, такую строку нельзя учитывать
+    ни при каких стратегиях, даже если в сумме указано М/О.
+    """
+    raw = cell_str(value)
+    if not raw:
+        return False
+
+    compact_raw = normalize_spaces(raw).upper()
+    ignored_analysis_values = {
+        "ВЕНЫ2",
+        "ВЕНЫ 2",
+        "СТОПЫ 2 НАГРУЗ",
+        "АРТЕРИИ 2",
+        "МАММОГР",
+    }
+    return compact_raw in ignored_analysis_values
+
 def is_real_analysis_value(value) -> bool:
     """
     Оставляем только реальные анализы из столбца анализа.
+
     Нас интересуют:
-    - коды/анализы, где есть цифры: 467-А, 455, ОБС90, 457К1ПАТ-А и т.п.
+    - коды/анализы, где есть явный код анализа: 467-А, 455, ОБС90, 457К1ПАТ-А,
+      PRS1-INV, 511ГИЭСПБ и т.п.
     - пометки М/О, М\О, МО
 
-    Всё остальное вроде 'первич', 'экг', 'терапевт' и т.п.
-    не считаем анализом и не используем для подстановки.
+    Не считаем анализом строки вроде:
+    - 'вены 2'
+    - 'первич 1'
+    - 'экг 2'
+    - 'терапевт 1'
+
+    То есть наличие одной цифры само по себе ещё не делает значение анализом.
     """
     if is_mo_marker(value):
         return True
 
-    analysis_key = normalize_analysis(value)
+    raw = cell_str(value)
+    if not raw:
+        return False
+
+    compact_raw = normalize_spaces(raw).upper()
+    if is_ignored_analysis_value(raw):
+        return False
+
+    analysis_key = normalize_analysis(raw)
     if not analysis_key:
         return False
 
-    return bool(re.search(r"\d", analysis_key))
+    # Если после нормализации это чисто числовой код — это анализ.
+    if re.fullmatch(r"\d+", analysis_key):
+        return True
+
+    # Классические кодовые формы анализов.
+    if re.fullmatch(r"[A-ZА-Я]+\d+[A-ZА-Я0-9-]*", analysis_key):
+        return True
+    if re.fullmatch(r"\d+[A-ZА-Я]+[A-ZА-Я0-9-]*", analysis_key):
+        return True
+    if re.fullmatch(r"\d+-[A-ZА-Я0-9]+", analysis_key):
+        return True
+
+    # Если это обычные слова с цифрой в конце типа "ВЕНЫ 2", пропускаем.
+    if re.fullmatch(r"[A-ZА-Я]+(?:\s+[A-ZА-Я]+)*\s+\d+", compact_raw):
+        return False
+
+    return False
 
 def debug_my_sheet(filename, sheet_name, max_rows=20, max_cols=8):
     wb = load_workbook(filename, data_only=True, read_only=True)
@@ -1525,12 +1678,13 @@ def parse_my_table(source, sheet_name, start_row=1, end_row=None):
     records = []
     current_fio = None
     current_date = None
+    current_match_text = ""
 
     for row_index, row in rows:
         if row_index % 5000 == 0:
             print(f"Обработка my_table: строка {row_index}")
 
-        max_needed_col = max(MY_COL_2, MY_DATE_COL, MY_ANALYSIS_COL, MY_SUM_COL + 1)
+        max_needed_col = max(MY_COL_2, MY_DATE_COL, MY_ANALYSIS_COL, MY_SUM_COL + 1, MY_MATCH_TEXT_COL)
         if len(row) < max_needed_col:
             row = list(row) + [None] * (max_needed_col - len(row))
 
@@ -1543,10 +1697,12 @@ def parse_my_table(source, sheet_name, start_row=1, end_row=None):
         raw_date_cell = row[MY_DATE_COL - 1]
         raw_analysis_cell = row[MY_ANALYSIS_COL - 1]
         raw_sum_cell = row[MY_SUM_COL - 1]
+        raw_match_text_cell = row[MY_MATCH_TEXT_COL - 1]
 
         row_date = parse_date(raw_date_cell)
         analysis = cell_str(raw_analysis_cell)
         amount = parse_money(raw_sum_cell)
+        match_text = cell_str(raw_match_text_cell)
 
         # Иногда в скачанной my_table колонки сдвигаются вправо на 1:
         # col 3 пусто, col 4 = дата, col 5 = анализ, col 6 = сумма.
@@ -1588,20 +1744,34 @@ def parse_my_table(source, sheet_name, start_row=1, end_row=None):
                 amount = parse_money(shifted_cont_sum)
 
 
-        # Если в строке есть ФИО, запоминаем текущего человека и его дату.
+        # Если в строке есть ФИО, запоминаем текущего человека, его дату
+        # и текстовую подсказку из 7-го столбца. Эту подсказку потом нужно
+        # протягивать на следующие строки-анализы того же человека.
         if looks_like_fio(col2):
             current_fio = extract_my_fio(col2)
             current_date = row_date
+            current_match_text = match_text
+        elif current_fio and match_text:
+            # Иногда в строках-продолжениях 7-й столбец тоже заполнен.
+            # Тогда обновляем текущую подсказку, чтобы она применялась
+            # и к следующим анализам этого же человека.
+            current_match_text = match_text
 
-        # Записываем вообще все записи, где уже известен человек и есть анализ.
+        # Записываем только строки, где уже известен человек и есть реальный анализ,
+        # либо есть пометка М/О в анализе или в сумме.
+        # Но если анализ находится в стоп-листе, такую строку полностью пропускаем,
+        # даже если в сумме указано М/О.
         # Если ФИО пустое, но current_fio уже есть, значит это продолжение этого же человека.
-        if current_fio and analysis:
+        if current_fio and not is_ignored_analysis_value(analysis) and (
+            is_real_analysis_value(analysis) or has_mo_in_analysis_or_sum(analysis, amount)
+        ):
             records.append(
                 {
                     "date": current_date,
                     "fio": current_fio,
                     "analysis": analysis,
                     "sum": amount,
+                    "match_text": current_match_text or match_text,
                     "row": row_index,
                 }
             )
@@ -1705,7 +1875,10 @@ def parse_details_table(filename, worksheet_name, start_row=1, end_row=None):
             current_date = pending_date
             pending_date = None
 
-        if not analysis and amount is None:
+        if is_ignored_analysis_value(analysis):
+            continue
+
+        if not is_real_analysis_value(analysis) and not has_mo_in_analysis_or_sum(analysis, amount):
             continue
 
         records.append(
@@ -1842,6 +2015,7 @@ def build_result_file(details_records, my_records, price_map, price2_map, my_tab
                 "surname_name_key": surname_name_key,
                 "surname_key": surname_key,
                 "surname_gender_key": normalize_surname_for_gender_fallback(surname_key),
+                "match_text": cell_str(item.get("match_text")),
             }
         )
 
@@ -1854,6 +2028,8 @@ def build_result_file(details_records, my_records, price_map, price2_map, my_tab
 
     header_fill = PatternFill(fill_type="solid", fgColor="D9EAF7")
     red_fill = PatternFill(fill_type="solid", fgColor="FFC7CE")
+    yellow_fill = PatternFill(fill_type="solid", fgColor="FFF2CC")
+    green_fill = PatternFill(fill_type="solid", fgColor="C6EFCE")
     bold_font = Font(bold=True)
     link_font = Font(color="0563C1", underline="single")
 
@@ -1920,7 +2096,8 @@ def build_result_file(details_records, my_records, price_map, price2_map, my_tab
         # 1) ФИО + анализ
         # 2) Фамилия + Имя + анализ
         # 3) Фамилия + анализ (с учётом склонения фамилии по полу)
-        # 4) ФИО + М/О (М/О, М\О, МО)
+        # 4) ФИО + М/О (М/О, М\О, МО), причём М/О может стоять
+        #    либо в анализе, либо в сумме, а сумма может отсутствовать.
         # Если нашли на более сильном этапе, дальше не ищем.
         match_entries = []
         match_strategy = "-"
@@ -1941,6 +2118,13 @@ def build_result_file(details_records, my_records, price_map, price2_map, my_tab
 
                 local_seen_rows.add(row_key)
                 local_entries.append((item, strategy_label))
+
+            local_entries.sort(
+                key=lambda pair: (
+                    date_distance_in_days(date_val, pair[0].get("date")),
+                    pair[0].get("row") if pair[0].get("row") is not None else 10 ** 9,
+                )
+            )
 
             return local_entries
 
@@ -1970,17 +2154,25 @@ def build_result_file(details_records, my_records, price_map, price2_map, my_tab
                 if match_entries:
                     match_strategy = "3: Фамилия+анализ"
                 else:
-                    # 4) ФИО + М/О (М/О, М\О, МО)
-                    # Ищем М/О и в анализе, и в сумме — в my_table оно может стоять в любой из этих колонок.
+                    # 4) Анализ + подсказка по фамилии/инициалам из 7-го столбца my_table
                     match_entries = collect_matches(
-                        lambda prepared: prepared["fio_norm"] == full_fio_key and (
-                            is_mo_marker(prepared["item"].get("analysis"))
-                            or is_mo_marker(prepared["item"].get("sum"))
-                        ),
-                        "4: ФИО+М/О",
+                        lambda prepared: analysis_keys_match(prepared["item"].get("analysis"), analysis)
+                                         and match_text_contains_fio_hint(prepared.get("match_text"), fio),
+                        "4: Анализ+7-й столбец",
                     )
                     if match_entries:
-                        match_strategy = "4: ФИО+М/О"
+                        match_strategy = "4: Анализ+7-й столбец"
+                    else:
+                        # 5) ФИО + М/О (М/О, М\О, МО), ищем М/О либо в анализе, либо в сумме
+                        match_entries = collect_matches(
+                            lambda prepared: prepared["fio_norm"] == full_fio_key and has_mo_in_analysis_or_sum(
+                                prepared["item"].get("analysis"),
+                                prepared["item"].get("sum"),
+                            ),
+                            "5: ФИО+М/О",
+                        )
+                        if match_entries:
+                            match_strategy = "5: ФИО+М/О"
 
         # Начиная с 6 столбца: ФИО | дата | анализ | сумма
         out_col = 6
@@ -2001,6 +2193,16 @@ def build_result_file(details_records, my_records, price_map, price2_map, my_tab
             date_cell.value = match_date
             analysis_cell.value = match_analysis
             sum_cell.value = match_sum
+
+            match_date_distance = date_distance_in_days(date_val, m.get("date"))
+            if match_date_distance > 3:
+                date_cell.fill = yellow_fill
+
+            if strategy_label == "3: Фамилия+анализ":
+                fio_cell.fill = yellow_fill
+
+            if strategy_label == "4: Анализ+7-й столбец":
+                fio_cell.fill = yellow_fill
 
             # Ссылка на строку во втором листе
             target_row = m["row"]
@@ -2109,7 +2311,7 @@ def main():
     print("Начинаю сбор результирующего Excel...")
     print("Копия второго листа будет сохранена только по реально заполненным строкам.")
     print(
-        "Цена берётся из price.xls: сначала с листа 1, если не найдено — с листа 2. Для цены из прайса используется только строгое совпадение нормализованного анализа без мягкого поиска по цифрам: например, 505Б не должен подставлять цену от 505. Сопоставление с my_table для людей и анализов идёт по шагам: 1) ФИО+анализ, 2) Фамилия+Имя+анализ, 3) Фамилия+анализ, 4) ФИО+М/О. Для сопоставления с my_table дополнительно разрешены соответствия: PRS1-INV = PRS, ОБС103 = ОБС 103, 511ГИЭСПБ = ФГДС+ТЕСТ, 457К1ПАТ-А = 457, 377С-УРО = 377, 377УРО = 377, 518СПБ = 518, 301УРО = 301, 302УРО = 302, 305УРО = 305, 308УРО = 308, 3090УРО = 3090, 343УРО = 343, 441-А = 441, 446-А = 446, 459-А = 459, 459 НОС = 459, 459 РОТ = 459, 467-А = 467, 159ЯГ = 159, 321СВ = 321, 11HOMA = 11НОМА, 1601ОСТ = 1601, 6802PH = 6802. Перед сопоставлением исходный текст ФИО в my_table дополнительно чистится от типовых опечаток, например АЛЕ САНДР -> АЛЕКСАНДР и АЛЕКСАНДРОВИЧЯ -> АЛЕКСАНДРОВИЧ. В итоговом листе включается Excel-фильтр, а найденные совпадения записываются справа в порядке: ФИО, дата, анализ, сумма."
+        "Цена берётся из price.xls: сначала с листа 1, если не найдено — с листа 2. Для цены из прайса используется только строгое совпадение нормализованного анализа без мягкого поиска по цифрам: например, 505Б не должен подставлять цену от 505. Сопоставление с my_table для людей и анализов идёт по шагам: 1) ФИО+анализ, 2) Фамилия+Имя+анализ, 3) Фамилия+анализ, 4) ФИО+М/О, где М/О может стоять либо в анализе, либо в сумме, а сумма может отсутствовать. Для сопоставления с my_table дополнительно разрешены соответствия: PRS1-INV = PRS, ОБС103 = ОБС 103, 511ГИЭСПБ = ФГДС+ТЕСТ, 457К1ПАТ-А = 457, 377С-УРО = 377, 377УРО = 377, 518СПБ = 518, 301УРО = 301, 302УРО = 302, 305УРО = 305, 308УРО = 308, 3090УРО = 3090, 343УРО = 343, 441-А = 441, 446-А = 446, 459-А = 459, 459 НОС = 459, 459 РОТ = 459, 467-А = 467, 159ЯГ = 159, 321СВ = 321, 11HOMA = 11НОМА, 1601ОСТ = 1601, 6802PH = 6802. Перед сопоставлением исходный текст ФИО в my_table дополнительно чистится от типовых опечаток, например АЛЕ САНДР -> АЛЕКСАНДР и АЛЕКСАНДРОВИЧЯ -> АЛЕКСАНДРОВИЧ. В итоговом листе включается Excel-фильтр, а найденные совпадения записываются справа в порядке: ФИО, дата, анализ, сумма. Если дата найденной записи отличается от даты из details_table больше чем на 3 дня в любую сторону, ячейка даты подсвечивается жёлтым. Если совпадение найдено только на этапе Фамилия+анализ, ячейка ФИО тоже подсвечивается жёлтым. Значения анализа из стоп-листа вроде ВЕНЫ 2, СТОПЫ 2 НАГРУЗ, АРТЕРИИ 2 и МАММОГР полностью исключаются из обработки даже при наличии М/О. Если совпадение найдено по новой стратегии Анализ+7-й столбец, ячейка ФИО подсвечивается жёлтым. Подсказка из 7-го столбца в my_table протягивается на следующие строки-анализы того же человека."
     )
     build_result_file(
         details_records=details_records,
@@ -2133,6 +2335,17 @@ def main():
     except Exception as e:
         print(f"Не удалось автоматически открыть итоговый файл: {e}")
 
+
+def sanitize_excel_value_for_output(value):
+    """
+    Защищает результирующий xlsx от проблемных значений при копировании
+    во второй лист. Если строка начинается с символов, которые Excel
+    трактует как формулу, сохраняем её как обычный текст.
+    """
+    if isinstance(value, str) and value:
+        if value[0] in ("=", "+", "-", "@"):  # Excel formula triggers
+            return "'" + value
+    return value
 
 def copy_sheet_to_workbook(source_wb, source_sheet_name, target_wb, target_sheet_name):
     """
@@ -2161,7 +2374,8 @@ def copy_sheet_to_workbook(source_wb, source_sheet_name, target_wb, target_sheet
 
         trimmed_row = row_values[:last_non_empty]
         for col_index, value in enumerate(trimmed_row, start=1):
-            target_ws.cell(row=row_index, column=col_index, value=value)
+            safe_value = sanitize_excel_value_for_output(value)
+            target_ws.cell(row=row_index, column=col_index, value=safe_value)
 
         copied_rows += 1
         max_used_col = max(max_used_col, last_non_empty)

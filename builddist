@@ -1,2 +1,4 @@
 python -m pip install pyinstaller pywin32
 python -m PyInstaller --noconfirm --clean --noconsole --name Medoctor --add-data "conclusion_form\res;conclusion_form\res" --add-data "search_form\input;search_form\input" --add-data "analyschecker_form\input;analyschecker_form\input" --add-data "analyschecker_form;analyschecker_form" main.py
+
+python -m PyInstaller --noconfirm --clean --noconsole --name Medoctor --collect-data docxcompose --add-data "conclusion_form\res;conclusion_form\res" --add-data "search_form\input;search_form\input" --add-data "analyschecker_form\input;analyschecker_form\input" --add-data "analyschecker_form;analyschecker_form" main.py
